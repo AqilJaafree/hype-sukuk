@@ -1,0 +1,27 @@
+{
+  "name": "sukuk-platform",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "test": "yarn ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts",
+    "crank:schedule": "npx ts-node scripts/schedule-crank.ts"
+  },
+  "dependencies": {
+    "@coral-xyz/anchor": "^0.32.1",
+    "@magicblock-labs/ephemeral-rollups-sdk": "^0.6.5",
+    "@solana/spl-token": "^0.4.6",
+    "@solana/wallet-adapter-react": "^0.15.35",
+    "@solana/web3.js": "^1.95.4",
+    "@zkmelabs/widget": "latest",
+    "@zkmelabs/verify-abi": "latest",
+    "tweetnacl": "^1.0.3"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "dotenv": "^16.4.5",
+    "mocha": "^10.2.0",
+    "ts-mocha": "^10.0.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.0"
+  }
+}

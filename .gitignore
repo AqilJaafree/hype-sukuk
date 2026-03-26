@@ -1,0 +1,31 @@
+# Rust / Anchor build artifacts
+target/
+**/*.rs.bk
+
+# Anchor keypairs (generated, never commit)
+.anchor/
+test-ledger/
+
+# Node / Next.js
+node_modules/
+app/.next/
+app/node_modules/
+app/out/
+
+# Environment files — contain secrets, never commit
+.env
+.env.local
+app/.env.local
+
+# OS / editor
+.DS_Store
+*.swp
+.idea/
+.vscode/
+
+# Solana keypairs
+*.json
+!Anchor.toml
+!package.json
+!tsconfig.json
+!app/tsconfig.json
