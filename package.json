@@ -3,7 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "test": "yarn ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts",
+    "test": "ts-mocha -p ./tsconfig.json -t 1000000 'tests/**/*.ts'",
+    "test:localnet": "ts-mocha -p ./tsconfig.json -t 1000000 'tests/0[1-5]_*.ts'",
+    "test:devnet": "ts-mocha -p ./tsconfig.json -t 1000000 'tests/0[6-9]_*.ts'",
     "crank:schedule": "npx ts-node scripts/schedule-crank.ts"
   },
   "dependencies": {
@@ -12,12 +14,15 @@
     "@solana/spl-token": "^0.4.6",
     "@solana/wallet-adapter-react": "^0.15.35",
     "@solana/web3.js": "^1.95.4",
-    "@zkmelabs/widget": "latest",
     "@zkmelabs/verify-abi": "latest",
+    "@zkmelabs/widget": "latest",
     "tweetnacl": "^1.0.3"
   },
   "devDependencies": {
+    "@types/chai": "^4.3.20",
+    "@types/mocha": "^10.0.10",
     "@types/node": "^20.0.0",
+    "chai": "^4.5.0",
     "dotenv": "^16.4.5",
     "mocha": "^10.2.0",
     "ts-mocha": "^10.0.0",

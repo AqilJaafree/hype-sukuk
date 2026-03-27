@@ -1,17 +1,23 @@
+[toolchain]
+
 [features]
-seeds = true
+resolution = true
 skip-lint = false
 
 [programs.devnet]
-sukuk_hook   = "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
-sukuk_rollup = "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
+sukuk_hook = "3MrobtssgGyiuLVgheCqTSWJGWQxXDbPvMtip7tuMQkv"
+sukuk_rollup = "B6KV6L7ZUC4mNf8P6ccudTneJqrE4Zsf7qQc2yzToqpt"
+
+[programs.localnet]
+sukuk_hook = "3MrobtssgGyiuLVgheCqTSWJGWQxXDbPvMtip7tuMQkv"
+sukuk_rollup = "B6KV6L7ZUC4mNf8P6ccudTneJqrE4Zsf7qQc2yzToqpt"
 
 [registry]
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "devnet"
-wallet  = "~/.config/solana/id.json"
+cluster = "localnet"
+wallet = "~/.config/solana/id.json"
 
 [scripts]
-test = "yarn ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
+test = "npx ts-mocha -p ./tsconfig.json -t 1000000 'tests/0[1-5]_*.ts'"

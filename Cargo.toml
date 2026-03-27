@@ -14,3 +14,11 @@ codegen-units = 1
 opt-level = 3
 incremental = false
 codegen-units = 1
+
+# ── Dependency patches ────────────────────────────────────────────────────────
+# blake3 v1.8.x pulls in constant_time_eq v0.4.2 which requires Cargo edition2024.
+# The Solana BPF platform toolchain (cargo 1.84) predates edition2024 stabilisation.
+# Pin blake3 to v1.5.5 which uses constant_time_eq 0.3.x instead.
+# Git source used because crates.io patches must point to a different source.
+[patch.crates-io]
+blake3 = { git = "https://github.com/BLAKE3-team/BLAKE3", tag = "1.5.5" }

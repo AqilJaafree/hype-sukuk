@@ -29,3 +29,7 @@ app/.env.local
 !package.json
 !tsconfig.json
 !app/tsconfig.json
+
+# claude
+.claude/
+.claude-plugin/

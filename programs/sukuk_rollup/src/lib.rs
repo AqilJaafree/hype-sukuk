@@ -8,7 +8,7 @@ pub mod state;
 use instructions::*;
 
 // Placeholder ID — replaced by real keypair after `anchor build`
-declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
+declare_id!("B6KV6L7ZUC4mNf8P6ccudTneJqrE4Zsf7qQc2yzToqpt");
 
 // IMPORTANT: #[ephemeral] must come BEFORE #[program].
 // It registers this program with the MagicBlock SDK so the ER runtime
