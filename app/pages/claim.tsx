@@ -22,7 +22,7 @@ const ClaimPage: NextPage = () => {
       </Head>
       <div className="min-h-screen bg-background">
         <NavBar />
-        <main className="max-w-lg mx-auto px-6 py-12 space-y-10">
+        <main className="max-w-lg mx-auto px-4 sm:px-6 py-8 sm:py-12 space-y-8 sm:space-y-10">
           <div className="space-y-2">
             <p className="text-xs text-muted">
               <Link href="/" className="hover:text-text transition-colors">Dashboard</Link>

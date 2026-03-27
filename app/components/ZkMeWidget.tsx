@@ -6,7 +6,7 @@
  *   "Import the ZkMeWidget component from app/components/ZkMeWidget.tsx"
  */
 import { useWallet } from "@solana/wallet-adapter-react";
-import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
+import WalletButton from "@/components/WalletButton";
 
 const steps = [
   { n: 1, label: "Connect wallet" },
@@ -25,7 +25,7 @@ export default function ZkMeWidget() {
           <p className="text-sm text-muted leading-relaxed">
             Connect your wallet to begin KYC verification.
           </p>
-          <WalletMultiButton
+          <WalletButton
             className="!bg-transparent !border !border-border !text-text !text-xs !px-3 !py-1.5 !rounded !h-auto !font-normal hover:!bg-background transition-colors"
           />
         </div>

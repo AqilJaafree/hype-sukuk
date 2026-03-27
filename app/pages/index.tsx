@@ -8,11 +8,12 @@
 import type { NextPage } from "next";
 import Head from "next/head";
 import Link from "next/link";
-import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
+import WalletButton from "@/components/WalletButton";
 import { useWallet } from "@solana/wallet-adapter-react";
 import PortfolioSummary from "@/components/PortfolioSummary";
 import ProfitBanner from "@/components/ProfitBanner";
 import NavBar from "@/components/NavBar";
+import ProfitChart from "@/components/ProfitChart";
 
 const quickActions = [
   { href: "/kyc",       label: "KYC Onboarding" },
@@ -47,13 +48,13 @@ const Dashboard: NextPage = () => {
                   profit accrual, and a Shariah-compliant OTC marketplace.
                 </p>
               </div>
-              <WalletMultiButton
+              <WalletButton
                 className="!bg-forest !text-white !text-xs !tracking-widest !uppercase !px-8 !py-3 !rounded-none !h-auto !font-normal hover:!bg-forest/90 transition-colors !mx-auto"
               />
             </div>
           </main>
         ) : (
-          <main className="max-w-4xl mx-auto px-6 py-12 space-y-10">
+          <main className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-12 space-y-8 sm:space-y-10">
             <div>
               <p className="text-xs font-medium tracking-widest uppercase text-muted mb-1">
                 Dashboard
@@ -64,6 +65,8 @@ const Dashboard: NextPage = () => {
             </div>
 
             <PortfolioSummary />
+
+            <ProfitChart />
 
             <section className="space-y-4">
               <p className="text-xs font-medium tracking-widest uppercase text-muted">

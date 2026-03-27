@@ -20,7 +20,7 @@ const KycPage: NextPage = () => {
       </Head>
       <div className="min-h-screen bg-background">
         <NavBar />
-        <main className="max-w-5xl mx-auto px-6 py-12">
+        <main className="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
           <div className="mb-8 space-y-2">
             <p className="text-xs text-muted">
               <Link href="/" className="hover:text-text transition-colors">Dashboard</Link>
@@ -32,7 +32,7 @@ const KycPage: NextPage = () => {
             </h1>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-12">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
             <div className="space-y-8">
               <div className="space-y-3">
                 <p className="text-xs font-medium tracking-widest uppercase text-muted">

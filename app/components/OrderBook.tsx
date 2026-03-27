@@ -34,7 +34,8 @@ export default function OrderBook() {
           No open orders
         </p>
       ) : (
-        <table className="w-full text-sm">
+        <div className="overflow-x-auto">
+        <table className="w-full text-sm min-w-[280px]">
           <thead>
             <tr className="border-b border-border">
               <th className="px-6 pb-3 text-left text-xs font-medium tracking-widest uppercase text-muted">
@@ -68,6 +69,7 @@ export default function OrderBook() {
             ))}
           </tbody>
         </table>
+        </div>
       )}
     </div>
   );
