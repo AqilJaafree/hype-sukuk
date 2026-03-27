@@ -51,7 +51,7 @@ pub struct InitializeExtraAccountMetaList<'info> {
 
 pub fn handler(ctx: Context<InitializeExtraAccountMetaList>) -> Result<()> {
     let registry = &ctx.accounts.investor_registry;
-    let zkme_mint_bytes = registry.zkme_credential_mint.to_bytes();
+    let _zkme_mint_bytes = registry.zkme_credential_mint.to_bytes();
 
     // 6 extra accounts (see index table above)
     let account_metas = vec![

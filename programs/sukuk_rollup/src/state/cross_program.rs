@@ -1,35 +1,9 @@
 use anchor_lang::prelude::*;
 use anchor_lang::{AccountDeserialize, AccountSerialize};
 
-/// Read-only mirror of sukuk_hook::InvestorRegistry.
-/// Field layout and order must exactly match the hook program's struct.
-/// The Anchor discriminator is sha256("account:InvestorRegistry")[..8] — identical
-/// in both programs because it is derived from the struct name, not the program ID.
-#[account]
-pub struct InvestorRegistry {
-    pub authority: Pubkey,
-    pub kyc_oracle: Pubkey,
-    pub zkme_credential_mint: Pubkey,
-    pub mint: Pubkey,
-    pub lock_until: i64,
-    pub profit_rate_bps: u16,
-    pub min_kyc_level: u8,
-    pub investor_count: u64,
-    pub rollup_active: bool,
-    pub session_start: i64,
-    pub bump: u8,
-}
-
-/// Read-only mirror of sukuk_hook::InvestorEntry.
-#[account]
-pub struct InvestorEntry {
-    pub wallet: Pubkey,
-    pub approved_at: i64,
-    pub kyc_level: u8,
-    pub kyc_expiry: i64,
-    pub kyc_provider_hash: [u8; 32],
-    pub bump: u8,
-}
+// Import canonical types directly from sukuk_hook (cpi feature).
+// Eliminates struct mirroring — layout is guaranteed identical at compile time.
+pub use sukuk_hook::state::{InvestorRegistry, InvestorEntry};
 
 // ── Generic cross-program account readers ─────────────────────────────────────
 

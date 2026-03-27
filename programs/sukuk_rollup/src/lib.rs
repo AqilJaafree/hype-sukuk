@@ -82,4 +82,13 @@ pub mod sukuk_rollup {
     ) -> Result<()> {
         undelegate_and_settle::handler(ctx)
     }
+
+    // ── Post-settlement base-chain instructions ────────────────────────────────
+
+    /// Verifies a Merkle proof against the committed DistributionRoot and
+    /// transfers the holder's accrued USDC profit from the vault.
+    /// Call on base Solana after undelegate_and_settle.
+    pub fn claim_profit(ctx: Context<ClaimProfit>, args: ClaimProfitArgs) -> Result<()> {
+        claim_profit::handler(ctx, args)
+    }
 }

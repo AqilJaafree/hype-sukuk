@@ -127,6 +127,8 @@ describe("05 — zkMe KYC Simulation", () => {
       createMintToInstruction(zkMeMint, investorSbtAta, payer.publicKey, 1, [], TOKEN_2022_PROGRAM_ID)
     );
     await sendAndConfirmTransaction(connection, sbtTx, [payer]);
+    // Short wait — localnet "confirmed" can lag behind for freshly-created ATAs.
+    await new Promise(resolve => setTimeout(resolve, 500));
 
     await transferCheckedWithTransferHook(
       connection, sender, senderAta, sukukMint, investorAta, sender, 100n, 6,

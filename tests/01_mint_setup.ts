@@ -24,6 +24,8 @@ describe("01 — Mint Setup", () => {
       450 // 4.50% annual profit rate
     );
 
+    // Short wait — localnet "confirmed" can lag behind for freshly-created accounts.
+    await new Promise(resolve => setTimeout(resolve, 500));
     const mintInfo = await getMint(
       connection,
       sukukMint,
@@ -43,6 +45,8 @@ describe("01 — Mint Setup", () => {
   });
 
   it("mint has 6 decimals", async () => {
+    // Short wait — localnet "confirmed" can lag behind for freshly-created accounts.
+    await new Promise(resolve => setTimeout(resolve, 500));
     const mintInfo = await getMint(
       connection,
       sukukMint,

@@ -28,13 +28,14 @@ pub fn handler<'info>(
             continue;
         }
 
-        // NOTE: f64 arithmetic is deterministic within a single-validator ER session.
-        // Replace with u128 fixed-point for production multi-validator environments.
-        let daily_rate = (profit_rate_bps as f64) / 10_000.0 / 365.0;
-        let period_profit = ((accrual.token_balance_snapshot as f64)
-            * daily_rate
-            * (elapsed as f64)
-            / 86_400.0) as u64;
+        // u128 fixed-point: profit = balance * rate_bps * elapsed_seconds
+        //                           / (10_000 * 365 * 86_400)
+        // Numerator fits in u128: max_u64 * 10_000 * max_i64 ≈ 1.7e28 < 3.4e38.
+        let period_profit_u128 = (accrual.token_balance_snapshot as u128)
+            .saturating_mul(profit_rate_bps as u128)
+            .saturating_mul(elapsed as u128)
+            / (10_000u128 * 365 * 86_400);
+        let period_profit = period_profit_u128.min(u64::MAX as u128) as u64;
 
         accrual.accrued_profit_usdc = accrual.accrued_profit_usdc.saturating_add(period_profit);
         accrual.last_tick = now;

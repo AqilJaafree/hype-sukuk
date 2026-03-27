@@ -81,9 +81,10 @@ describe("04 — Transfer Hook", () => {
         .rpc();
     }
 
-    // Mint zkMe SBTs
+    // Mint zkMe SBTs and wait for localnet propagation before any transfer_hook reads them.
     await mintSbt(connection, payer, payer, zkMeMint, sender.publicKey);
     await mintSbt(connection, payer, payer, zkMeMint, receiver.publicKey);
+    await new Promise(resolve => setTimeout(resolve, 500));
 
     // Create sukuk ATAs and mint tokens to sender
     const senderAta = getAssociatedTokenAddressSync(
@@ -115,6 +116,9 @@ describe("04 — Transfer Hook", () => {
       sukukMint, receiver.publicKey, false, TOKEN_2022_PROGRAM_ID
     );
 
+    // resolveExtraAccountMetas fetches investor_registry on-chain to read
+    // AccountData seeds. Give localnet time to propagate all before hook accounts.
+    await new Promise(resolve => setTimeout(resolve, 1000));
     await transferCheckedWithTransferHook(
       connection, sender, senderAta, sukukMint, receiverAta, sender, 100n, 6,
       [], { commitment: "confirmed" }, TOKEN_2022_PROGRAM_ID

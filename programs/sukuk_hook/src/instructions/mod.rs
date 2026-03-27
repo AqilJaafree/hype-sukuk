@@ -1,3 +1,5 @@
+#![allow(ambiguous_glob_reexports)]
+
 pub mod add_investor;
 pub mod initialize_extra_metas;
 pub mod initialize_registry;

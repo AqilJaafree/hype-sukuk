@@ -3,6 +3,9 @@ use anchor_lang::prelude::*;
 use crate::state::{OtcOrder, OrderSide, cross_program::{read_investor_registry, read_investor_entry}};
 use crate::errors::RollupError;
 
+/// sukuk_hook program ID — used for on-chain PDA derivation and verification.
+const SUKUK_HOOK_ID: Pubkey = sukuk_hook::ID;
+
 /// Matches a bid (Buy) and an ask (Sell) OtcOrder inside the rollup.
 /// Records intent only — actual token transfer happens post-undelegate
 /// on base Solana via transfer_checked, which enforces the TransferHook.
@@ -36,7 +39,8 @@ pub fn handler(ctx: Context<MatchOtcOrder>) -> Result<()> {
         require!(now < ask.expiry, RollupError::OrderExpired);
     }
 
-    // Both counterparties must be whitelisted — cross-program read of base-chain entries
+    // Both counterparties must be whitelisted.
+    // PDA keys for both entries are verified by seeds constraints on the account struct.
     let bid_entry = read_investor_entry(&ctx.accounts.bid_investor_entry)?;
     require!(
         bid_entry.wallet == ctx.accounts.bid_order.owner,
@@ -78,13 +82,31 @@ pub struct MatchOtcOrder<'info> {
     #[account(mut, constraint = ask_order.side == OrderSide::Sell)]
     pub ask_order: Account<'info, OtcOrder>,
 
-    /// CHECK: InvestorRegistry — whitelist source of truth.
+    /// CHECK: InvestorRegistry PDA owned by sukuk_hook.
+    /// Key is verified on-chain via seeds derivation against SUKUK_HOOK_ID.
+    #[account(
+        seeds = [b"investor_registry", bid_order.mint.as_ref()],
+        seeds::program = SUKUK_HOOK_ID,
+        bump,
+    )]
     pub investor_registry: AccountInfo<'info>,
 
-    /// CHECK: InvestorEntry for the bid (Buy) order owner.
+    /// CHECK: InvestorEntry PDA for the bid (Buy) order owner.
+    /// Key is verified on-chain via seeds derivation against SUKUK_HOOK_ID.
+    #[account(
+        seeds = [b"investor_entry", investor_registry.key().as_ref(), bid_order.owner.as_ref()],
+        seeds::program = SUKUK_HOOK_ID,
+        bump,
+    )]
     pub bid_investor_entry: AccountInfo<'info>,
 
-    /// CHECK: InvestorEntry for the ask (Sell) order owner.
+    /// CHECK: InvestorEntry PDA for the ask (Sell) order owner.
+    /// Key is verified on-chain via seeds derivation against SUKUK_HOOK_ID.
+    #[account(
+        seeds = [b"investor_entry", investor_registry.key().as_ref(), ask_order.owner.as_ref()],
+        seeds::program = SUKUK_HOOK_ID,
+        bump,
+    )]
     pub ask_investor_entry: AccountInfo<'info>,
 }
 

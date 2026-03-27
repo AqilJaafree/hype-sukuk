@@ -30,4 +30,8 @@ pub enum RollupError {
     InvalidExpiry,
     #[msg("Mint mismatch between orders")]
     MintMismatch,
+    #[msg("Distribution has not been committed yet")]
+    DistributionNotCommitted,
+    #[msg("Merkle proof is invalid for this claim")]
+    InvalidMerkleProof,
 }

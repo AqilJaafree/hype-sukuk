@@ -1,4 +1,7 @@
+#![allow(ambiguous_glob_reexports)]
+
 pub mod accrue_profit;
+pub mod claim_profit;
 pub mod commit_distribution;
 pub mod delegate_accounts;
 pub mod initialize_accrual_state;
@@ -8,6 +11,7 @@ pub mod schedule_profit_crank;
 pub mod undelegate_and_settle;
 
 pub use accrue_profit::*;
+pub use claim_profit::*;
 pub use commit_distribution::*;
 pub use delegate_accounts::*;
 pub use initialize_accrual_state::*;
