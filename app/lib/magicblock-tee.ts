@@ -81,11 +81,13 @@ export async function createTeeSession(
     {
       publicKey: wallet.publicKey,
       signTransaction: async (tx) => {
-        tx.sign(wallet);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        (tx as any).sign(wallet);
         return tx;
       },
       signAllTransactions: async (txs) =>
-        txs.map((tx) => { tx.sign(wallet); return tx; }),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        txs.map((tx) => { (tx as any).sign(wallet); return tx; }),
     },
     { commitment: "confirmed" },
   );

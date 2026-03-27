@@ -8,7 +8,7 @@ type Status = "not-started" | "pending" | "approved" | "expired";
 
 export default function KycStatusBadge() {
   // TODO: read InvestorEntry PDA to derive status
-  const status: Status = "not-started";
+  const status = "not-started" as Status;
 
   const config: Record<Status, { label: string; cls: string }> = {
     "not-started": { label: "Not Started",  cls: "bg-border text-muted"           },

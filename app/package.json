@@ -23,10 +23,16 @@
     "recharts": "^2.15.4",
     "tweetnacl": "^1.0.3"
   },
+  "pnpm": {
+    "overrides": {
+      "@types/react": "18.2.79",
+      "@types/react-dom": "18.2.25"
+    }
+  },
   "devDependencies": {
     "@types/node": "^20.0.0",
-    "@types/react": "^18.3.0",
-    "@types/react-dom": "^18.3.0",
+    "@types/react": "18.2.79",
+    "@types/react-dom": "18.2.25",
     "autoprefixer": "^10.4.19",
     "postcss": "^8.4.38",
     "tailwindcss": "^3.4.3",

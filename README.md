@@ -57,6 +57,9 @@ A compliant sukuk (Islamic bond) tokenisation platform on Solana using Token-202
 | Merkle tree | `rs_merkle` | `1.4.2` |
 | RPC (base) | Helius devnet | — |
 | RPC (rollup) | MagicBlock TEE devnet | `tee.magicblock.app` |
+| Frontend | Next.js 14 + Tailwind CSS + Recharts | `14.2.x` |
+| Design tool | Pencil.dev (two-way code↔design sync) | — |
+| Wallet UI | `@solana/wallet-adapter-react-ui` | `0.9.x` |
 
 ---
 
@@ -77,15 +80,36 @@ hype-sukuk/
 │           ├── errors.rs
 │           ├── instructions/
 │           └── state/
-├── app/
-│   ├── lib/
-│   │   ├── connections.ts   # Dual-connection client (base + TEE)
-│   │   └── magicblock-tee.ts # TEE auth flow
+├── app/                     # Next.js investor frontend
 │   ├── components/
-│   │   └── KycGate.tsx
-│   └── pages/api/
-│       ├── zkme/
-│       └── webhooks/
+│   │   ├── NavBar.tsx        # Sticky nav, mobile hamburger, Learn popup
+│   │   ├── LearnModal.tsx    # Informational popup (Sukuk 101 + glossary)
+│   │   ├── PortfolioSummary.tsx
+│   │   ├── ProfitChart.tsx   # Line chart — accrued profit over time
+│   │   ├── ProfitBanner.tsx  # Alert when distribution is claimable
+│   │   ├── KycStatusBadge.tsx
+│   │   ├── ZkMeWidget.tsx    # zkMe KYC stepper
+│   │   ├── ClaimProfitForm.tsx
+│   │   ├── PlaceOrderForm.tsx
+│   │   ├── OrderBook.tsx
+│   │   ├── AccrualHistory.tsx
+│   │   └── WalletButton.tsx  # SSR-safe WalletMultiButton wrapper
+│   ├── pages/
+│   │   ├── index.tsx         # Dashboard
+│   │   ├── portfolio.tsx     # Holdings + accrual history
+│   │   ├── kyc.tsx           # KYC onboarding flow
+│   │   ├── otc.tsx           # OTC marketplace
+│   │   ├── claim.tsx         # Merkle proof profit claim
+│   │   └── api/
+│   │       ├── zkme/         # zkMe webhook → add_investor
+│   │       └── webhooks/     # Helius SBT burn → revocation
+│   ├── lib/
+│   │   ├── connections.ts    # Dual-connection client (base + TEE)
+│   │   └── magicblock-tee.ts # TEE auth flow
+│   ├── styles/globals.css
+│   ├── tailwind.config.ts
+│   └── package.json
+├── design.pen               # Pencil.dev canvas (two-way design↔code sync)
 ├── scripts/
 │   └── schedule-crank.ts    # One-time crank scheduler
 ├── tests/                   # Anchor test suite (01–09)
@@ -101,7 +125,7 @@ hype-sukuk/
 - [Rust](https://rustup.rs/) `1.85.0+`
 - [Solana CLI](https://docs.solana.com/cli/install-solana-cli-tools) `2.3.13+`
 - [Anchor CLI](https://www.anchor-lang.com/docs/installation) `0.32.1`
-- Node.js `24.10.0+` / Yarn
+- Node.js `24.10.0+` / pnpm
 - A [Helius](https://dashboard.helius.dev) devnet API key
 - A [zkMe](https://dashboard.zk.me) account (with On-chain Mint enabled for Solana devnet)
 
@@ -114,7 +138,8 @@ hype-sukuk/
 ```bash
 git clone https://github.com/AqilJaafree/hype-sukuk.git
 cd hype-sukuk
-yarn install
+pnpm install          # root (tests + scripts)
+pnpm app:install      # frontend (app/)
 ```
 
 ### 2. Configure environment
@@ -180,6 +205,76 @@ yarn ts-mocha tests/06_delegation.ts
 # Schedule native profit-accrual crank (runs automatically every 30s)
 yarn crank:schedule
 ```
+
+---
+
+## Frontend — Investor UI
+
+A Scandinavian minimalist Next.js app for investors, built with Tailwind CSS and Recharts.
+
+### Pages
+
+| Route | Description |
+|---|---|
+| `/` | Dashboard — portfolio summary, profit chart, quick actions |
+| `/portfolio` | Holdings, accrual history, KYC status |
+| `/kyc` | zkMe identity verification flow |
+| `/otc` | OTC bid/ask order placement and live order book |
+| `/claim` | Merkle proof profit distribution claim |
+
+### Design system
+
+| Token | Value | Usage |
+|---|---|---|
+| `background` | `#F7F6F3` | Warm linen canvas |
+| `surface` | `#FFFFFF` | Cards |
+| `border` | `#E2E0DB` | Hairline separators |
+| `forest` | `#1D5C3A` | Primary actions, positive values |
+| `gold` | `#A8832A` | Distribution alerts |
+| `muted` | `#76726B` | Labels, secondary text |
+
+### Running locally
+
+```bash
+pnpm app:install   # install app/node_modules
+pnpm app:dev       # starts at localhost:3000
+```
+
+### Deploying to Netlify
+
+Add a `netlify.toml` at the repo root:
+
+```toml
+[build]
+  base    = "app"
+  command = "pnpm run build"
+  publish = ".next"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+```
+
+Netlify dashboard settings:
+- **Base directory:** `app`
+- **Build command:** `pnpm run build`
+- **Publish directory:** `app/.next`
+
+Required environment variables:
+
+```env
+NEXT_PUBLIC_SOLANA_RPC_URL=https://devnet.helius-rpc.com?api-key=<key>
+```
+
+### Pencil.dev (design↔code sync)
+
+The `design.pen` file at the repo root is the Pencil canvas. Open it in VS Code or Cursor with the Pencil extension installed. Use `Ctrl+K` on the canvas to import components:
+
+```
+Import the Dashboard page from app/pages/index.tsx
+Import the NavBar component from app/components/NavBar.tsx
+```
+
+Each component file contains a `Pencil import hint:` comment with the exact prompt.
 
 ---
 
