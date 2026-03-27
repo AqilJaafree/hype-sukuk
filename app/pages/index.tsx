@@ -8,7 +8,6 @@
 import type { NextPage } from "next";
 import Head from "next/head";
 import Link from "next/link";
-import WalletButton from "@/components/WalletButton";
 import { useWallet } from "@solana/wallet-adapter-react";
 import PortfolioSummary from "@/components/PortfolioSummary";
 import ProfitBanner from "@/components/ProfitBanner";
@@ -48,9 +47,6 @@ const Dashboard: NextPage = () => {
                   profit accrual, and a Shariah-compliant OTC marketplace.
                 </p>
               </div>
-              <WalletButton
-                className="!bg-forest !text-white !text-xs !tracking-widest !uppercase !px-8 !py-3 !rounded-none !h-auto !font-normal hover:!bg-forest/90 transition-colors !mx-auto"
-              />
             </div>
           </main>
         ) : (
