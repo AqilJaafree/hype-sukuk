@@ -6,6 +6,7 @@ import * as anchor from "@coral-xyz/anchor";
 import { Program } from "@coral-xyz/anchor";
 import { assert } from "chai";
 import { SukukHook } from "../target/types/sukuk_hook";
+import { SystemProgram, Transaction, sendAndConfirmTransaction } from "@solana/web3.js";
 import {
   createSukukMint,
   createMockSbtMint,
@@ -38,8 +39,9 @@ describe("03 — Whitelist", () => {
     zkMeMint  = await createMockSbtMint(connection, payer, payer.publicKey);
     registryPda = findRegistryPda(sukukMint);
 
-    const sig = await connection.requestAirdrop(kycOracle.publicKey, 2e9);
-    await connection.confirmTransaction(sig);
+    await sendAndConfirmTransaction(connection, new Transaction().add(
+      SystemProgram.transfer({ fromPubkey: payer.publicKey, toPubkey: kycOracle.publicKey, lamports: 1e8 })
+    ), [payer]);
 
     await program.methods
       .initializeRegistry({

@@ -1,16 +1,20 @@
 /**
  * Test 08: OTC order placement and matching on TEE rollup.
- * Requires devnet + TEE. Skipped if SUKUK_MINT not set.
+ * Follows the anchor-rock-paper-scissor example pattern (SDK 0.8.0):
+ *   - getAuthToken to obtain a per-session TEE connection
+ * Requires devnet + SUKUK_MINT env var.
  */
 import * as anchor from "@coral-xyz/anchor";
 import { Program, BN } from "@coral-xyz/anchor";
 import { assert } from "chai";
+import * as nacl from "tweetnacl";
+import { getAuthToken } from "@magicblock-labs/ephemeral-rollups-sdk";
 import { SukukRollup } from "../target/types/sukuk_rollup";
 import { findRegistryPda, findEntryPda, SUKUK_ROLLUP_PROGRAM_ID } from "./helpers";
 
 const SUKUK_MINT_STR = process.env.SUKUK_MINT;
-const MAGICBLOCK_TEE_RPC = process.env.MAGICBLOCK_TEE_ENDPOINT ?? "https://tee.magicblock.app";
-const AUTH_TOKEN = process.env.MAGICBLOCK_AUTH_TOKEN;
+const TEE_URL    = process.env.MAGICBLOCK_TEE_ENDPOINT ?? "https://tee.magicblock.app";
+const TEE_WS_URL = TEE_URL.replace("https://", "wss://");
 
 describe("08 — OTC Matching (TEE rollup)", function () {
   if (!SUKUK_MINT_STR) {
@@ -23,20 +27,7 @@ describe("08 — OTC Matching (TEE rollup)", function () {
   const baseProvider = anchor.AnchorProvider.env();
   anchor.setProvider(baseProvider);
 
-  const teeRpc = AUTH_TOKEN
-    ? `${MAGICBLOCK_TEE_RPC}?token=${AUTH_TOKEN}`
-    : MAGICBLOCK_TEE_RPC;
-  const teeConnection = new anchor.web3.Connection(teeRpc, "confirmed");
-  const teeProvider   = new anchor.AnchorProvider(teeConnection, baseProvider.wallet, {
-    commitment:    "confirmed",
-    skipPreflight: true,
-  });
-  const rollupProgram = new anchor.Program<SukukRollup>(
-    (anchor.workspace.SukukRollup as Program<SukukRollup>).idl,
-    teeProvider
-  );
-
-  const sukukMint  = new anchor.web3.PublicKey(SUKUK_MINT_STR);
+  const sukukMint   = new anchor.web3.PublicKey(SUKUK_MINT_STR);
   const registryPda = findRegistryPda(sukukMint);
   const seller      = baseProvider.wallet.publicKey;
   const sellerEntry = findEntryPda(registryPda, seller);
@@ -55,9 +46,38 @@ describe("08 — OTC Matching (TEE rollup)", function () {
     SUKUK_ROLLUP_PROGRAM_ID
   );
 
+  let rollupProgram: anchor.Program<SukukRollup>;
+
+  before("build authenticated TEE connection", async () => {
+    const wallet = (baseProvider.wallet as any).payer as anchor.web3.Keypair;
+    let teeRpc = TEE_URL;
+
+    try {
+      const authToken = await getAuthToken(
+        TEE_URL,
+        wallet.publicKey,
+        (message: Uint8Array) =>
+          Promise.resolve(nacl.sign.detached(message, wallet.secretKey))
+      );
+      teeRpc = `${TEE_URL}?token=${authToken.token}`;
+      console.log("  TEE auth token obtained");
+    } catch (e: any) {
+      console.log("  TEE auth skipped (TEE unavailable):", e.message?.slice(0, 80));
+    }
+
+    const teeProvider = new anchor.AnchorProvider(
+      new anchor.web3.Connection(teeRpc, { wsEndpoint: TEE_WS_URL }),
+      baseProvider.wallet,
+      { commitment: "confirmed", skipPreflight: true }
+    );
+    rollupProgram = new anchor.Program<SukukRollup>(
+      (anchor.workspace.SukukRollup as Program<SukukRollup>).idl,
+      teeProvider
+    );
+  });
+
   it("places a Sell order successfully", async () => {
     const expiry = new BN(Math.floor(Date.now() / 1000) + 3600);
-    // auto-resolved: otcOrder (PDA from mint+owner+nonce arg), systemProgram
     await (rollupProgram.methods as any)
       .placeOtcOrder({
         side:       { sell: {} },
@@ -67,10 +87,10 @@ describe("08 — OTC Matching (TEE rollup)", function () {
         nonce:      NONCE,
       })
       .accounts({
-        owner:           seller,
-        mint:            sukukMint,
+        owner:            seller,
+        mint:             sukukMint,
         investorRegistry: registryPda,
-        investorEntry:   sellerEntry,
+        investorEntry:    sellerEntry,
       } as any)
       .rpc({ skipPreflight: true });
 
@@ -82,7 +102,7 @@ describe("08 — OTC Matching (TEE rollup)", function () {
   });
 
   it("match with non-existent bid → fails gracefully", async () => {
-    const fakeBid = anchor.web3.Keypair.generate().publicKey;
+    const fakeBid      = anchor.web3.Keypair.generate().publicKey;
     const fakeBidEntry = anchor.web3.Keypair.generate().publicKey;
     try {
       await (rollupProgram.methods as any)

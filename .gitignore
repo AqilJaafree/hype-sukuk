@@ -33,3 +33,6 @@ app/.env.local
 # claude
 .claude/
 .claude-plugin/
+
+# internal docs / notes (not for public repo)
+docs/

@@ -1,10 +1,15 @@
 /**
  * Test 07: Profit accrual on MagicBlock TEE private ER.
- * Requires devnet + TEE. Skipped if SUKUK_MINT not set.
+ * Follows the anchor-rock-paper-scissor example pattern (SDK 0.8.0):
+ *   - getAuthToken to obtain a per-session TEE connection
+ *   - TEE connection: ${TEE_URL}?token=${authToken.token}
+ * Requires devnet + SUKUK_MINT env var.
  */
 import * as anchor from "@coral-xyz/anchor";
 import { Program } from "@coral-xyz/anchor";
 import { assert } from "chai";
+import * as nacl from "tweetnacl";
+import { getAuthToken } from "@magicblock-labs/ephemeral-rollups-sdk";
 import {
   TOKEN_2022_PROGRAM_ID,
   getAssociatedTokenAddressSync,
@@ -13,8 +18,8 @@ import { SukukRollup } from "../target/types/sukuk_rollup";
 import { findRegistryPda, SUKUK_ROLLUP_PROGRAM_ID } from "./helpers";
 
 const SUKUK_MINT_STR = process.env.SUKUK_MINT;
-const MAGICBLOCK_TEE_RPC = process.env.MAGICBLOCK_TEE_ENDPOINT ?? "https://tee.magicblock.app";
-const AUTH_TOKEN = process.env.MAGICBLOCK_AUTH_TOKEN;
+const TEE_URL    = process.env.MAGICBLOCK_TEE_ENDPOINT ?? "https://tee.magicblock.app";
+const TEE_WS_URL = TEE_URL.replace("https://", "wss://");
 
 describe("07 — Profit Accrual (TEE rollup)", function () {
   if (!SUKUK_MINT_STR) {
@@ -27,27 +32,44 @@ describe("07 — Profit Accrual (TEE rollup)", function () {
   const baseProvider = anchor.AnchorProvider.env();
   anchor.setProvider(baseProvider);
 
-  const teeRpc = AUTH_TOKEN
-    ? `${MAGICBLOCK_TEE_RPC}?token=${AUTH_TOKEN}`
-    : MAGICBLOCK_TEE_RPC;
-  const teeConnection = new anchor.web3.Connection(teeRpc, "confirmed");
-  const teeProvider   = new anchor.AnchorProvider(teeConnection, baseProvider.wallet, {
-    commitment:    "confirmed",
-    skipPreflight: true,
-  });
-  const rollupProgram = new anchor.Program<SukukRollup>(
-    (anchor.workspace.SukukRollup as Program<SukukRollup>).idl,
-    teeProvider
-  );
-
-  const sukukMint  = new anchor.web3.PublicKey(SUKUK_MINT_STR);
+  const sukukMint   = new anchor.web3.PublicKey(SUKUK_MINT_STR);
   const registryPda = findRegistryPda(sukukMint);
+
+  let rollupProgram: anchor.Program<SukukRollup>;
 
   const holders = [
     anchor.web3.Keypair.generate(),
     anchor.web3.Keypair.generate(),
     anchor.web3.Keypair.generate(),
   ];
+
+  before("build authenticated TEE connection", async () => {
+    const wallet = (baseProvider.wallet as any).payer as anchor.web3.Keypair;
+    let teeRpc = TEE_URL;
+
+    try {
+      const authToken = await getAuthToken(
+        TEE_URL,
+        wallet.publicKey,
+        (message: Uint8Array) =>
+          Promise.resolve(nacl.sign.detached(message, wallet.secretKey))
+      );
+      teeRpc = `${TEE_URL}?token=${authToken.token}`;
+      console.log("  TEE auth token obtained");
+    } catch (e: any) {
+      console.log("  TEE auth skipped (TEE unavailable):", e.message?.slice(0, 80));
+    }
+
+    const teeProvider = new anchor.AnchorProvider(
+      new anchor.web3.Connection(teeRpc, { wsEndpoint: TEE_WS_URL }),
+      baseProvider.wallet,
+      { commitment: "confirmed", skipPreflight: true }
+    );
+    rollupProgram = new anchor.Program<SukukRollup>(
+      (anchor.workspace.SukukRollup as Program<SukukRollup>).idl,
+      teeProvider
+    );
+  });
 
   it("initialises AccrualState for 3 holders", async () => {
     for (const holder of holders) {
@@ -59,7 +81,6 @@ describe("07 — Profit Accrual (TEE rollup)", function () {
         sukukMint, holder.publicKey, false, TOKEN_2022_PROGRAM_ID
       );
 
-      // auto-resolved: accrualState (PDA from mint+holder arg), systemProgram
       await (rollupProgram.methods as any)
         .initializeAccrualState(holder.publicKey)
         .accounts({
@@ -87,7 +108,6 @@ describe("07 — Profit Accrual (TEE rollup)", function () {
     );
 
     for (let i = 0; i < 2; i++) {
-      // auto-resolved: nothing except remainingAccounts
       await (rollupProgram.methods as any)
         .accrueProfit()
         .accounts({ investorRegistry: registryPda } as any)

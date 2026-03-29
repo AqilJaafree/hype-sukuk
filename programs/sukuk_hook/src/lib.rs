@@ -67,6 +67,16 @@ pub mod sukuk_hook {
         update_lock_period::handler(ctx, new_lock_until)
     }
 
+    /// Updates rollup lifecycle flags on the InvestorRegistry.
+    /// Called via CPI by sukuk_rollup after delegation / undelegation.
+    pub fn set_rollup_state(
+        ctx: Context<SetRollupState>,
+        rollup_active: bool,
+        session_start: i64,
+    ) -> Result<()> {
+        set_rollup_state::handler(ctx, rollup_active, session_start)
+    }
+
     /// Fallback: routes Token-2022 transfer-hook execute calls (SPL interface
     /// discriminator) to the compliance handler.
     pub fn fallback<'info>(

@@ -6,6 +6,7 @@ import * as anchor from "@coral-xyz/anchor";
 import { Program } from "@coral-xyz/anchor";
 import { assert } from "chai";
 import {
+  SystemProgram,
   Transaction,
   sendAndConfirmTransaction,
 } from "@solana/web3.js";
@@ -48,11 +49,11 @@ describe("05 — zkMe KYC Simulation", () => {
   let investorSbtAta: anchor.web3.PublicKey;
 
   before(async () => {
-    await Promise.all([
-      connection.confirmTransaction(await connection.requestAirdrop(kycOracle.publicKey, 2e9)),
-      connection.confirmTransaction(await connection.requestAirdrop(sender.publicKey, 2e9)),
-      connection.confirmTransaction(await connection.requestAirdrop(investor.publicKey, 2e9)),
-    ]);
+    await sendAndConfirmTransaction(connection, new Transaction().add(
+      SystemProgram.transfer({ fromPubkey: payer.publicKey, toPubkey: kycOracle.publicKey, lamports: 1e8 }),
+      SystemProgram.transfer({ fromPubkey: payer.publicKey, toPubkey: sender.publicKey, lamports: 1e8 }),
+      SystemProgram.transfer({ fromPubkey: payer.publicKey, toPubkey: investor.publicKey, lamports: 1e8 }),
+    ), [payer]);
 
     sukukMint   = await createSukukMint(connection, payer, payer.publicKey, 450);
     zkMeMint    = await createMockSbtMint(connection, payer, payer.publicKey);

@@ -16,8 +16,10 @@ sukuk_rollup = "B6KV6L7ZUC4mNf8P6ccudTneJqrE4Zsf7qQc2yzToqpt"
 url = "https://api.apr.dev"
 
 [provider]
-cluster = "localnet"
+cluster = "devnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]
 test = "npx ts-mocha -p ./tsconfig.json -t 1000000 'tests/0[1-5]_*.ts'"
+test-tee = "npx ts-mocha -p ./tsconfig.json -t 180000 'tests/0[6-9]_*.ts'"
+test-all = "npx ts-mocha -p ./tsconfig.json -t 180000 'tests/*.ts'"

@@ -1,15 +1,19 @@
 /**
  * MagicBlock Private Ephemeral Rollup — TEE Authentication
  *
- * The TEE (Intel TDX) endpoint requires a signed challenge to issue an
- * access token. All rollup transactions are then sent to the token-gated
- * endpoint. The token is ephemeral — refresh when it expires (typically 1h).
+ * Uses the official SDK functions:
+ *   - verifyTeeRpcIntegrity  — confirms the server runs on genuine Intel TDX
+ *   - getAuthToken           — handles challenge/sign/token exchange
  *
  * Endpoint: https://tee.magicblock.app
  */
 
-import { Connection, Keypair, PublicKey } from "@solana/web3.js";
-import { AnchorProvider, Program } from "@coral-xyz/anchor";
+import { Connection, Keypair, Transaction, VersionedTransaction } from "@solana/web3.js";
+import { AnchorProvider } from "@coral-xyz/anchor";
+import {
+  getAuthToken,
+  verifyTeeRpcIntegrity,
+} from "@magicblock-labs/ephemeral-rollups-sdk";
 import nacl from "tweetnacl";
 
 const TEE_BASE = "https://tee.magicblock.app";
@@ -26,73 +30,54 @@ export interface TeeSession {
  * Authenticate with the MagicBlock TEE validator and return a ready-to-use
  * Connection + AnchorProvider pointed at the private ER.
  *
- * @param wallet  The keypair that owns the delegated accounts (authority or
- *                the investor's session key). Must be able to sign.
- * @param walletAdapter  Optional wallet adapter (browser context). If provided,
- *                       it is used for signing instead of raw secretKey.
+ * Optionally verifies the TEE server is running on genuine Intel TDX hardware
+ * before authenticating (set verifyIntegrity = false to skip in dev).
  */
-// ── Helper: Fetch with error handling ─────────────────────────────────────────
-async function teePost<T>(endpoint: string, body: object): Promise<T> {
-  const res = await fetch(`${TEE_BASE}${endpoint}`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-
-  if (!res.ok) {
-    throw new Error(`TEE ${endpoint} failed: ${res.status} ${await res.text()}`);
-  }
-
-  return res.json();
-}
-
 export async function createTeeSession(
   wallet: Keypair,
+  verifyIntegrity = true,
 ): Promise<TeeSession> {
-  const publicKey = wallet.publicKey.toBase58();
+  // ── Step 1 (optional): Verify the server is genuine Intel TDX ─────────────
+  if (verifyIntegrity) {
+    const isVerified = await verifyTeeRpcIntegrity(TEE_BASE);
+    if (!isVerified) {
+      throw new Error("TEE RPC integrity check failed — server may not be running on genuine TDX hardware");
+    }
+  }
 
-  // ── Step 1: Request challenge ──────────────────────────────────────────────
-  const { challenge } = await teePost<{ challenge: string }>(
-    "/challenge",
-    { publicKey },
+  // ── Step 2: Challenge / sign / token exchange via SDK ─────────────────────
+  const { token, expiresAt } = await getAuthToken(
+    TEE_BASE,
+    wallet.publicKey,
+    (message: Uint8Array) =>
+      Promise.resolve(nacl.sign.detached(message, wallet.secretKey)),
   );
 
-  // ── Step 2: Sign the challenge with the wallet's private key ───────────────
-  const challengeBytes = Buffer.from(challenge, "base64");
-  const signature = nacl.sign.detached(challengeBytes, wallet.secretKey);
-
-  // ── Step 3: Exchange signature for TEE access token ────────────────────────
-  const { authToken, expiresIn } = await teePost<{
-    authToken: string;
-    expiresIn: number;
-  }>("/token", {
-    publicKey,
-    signature: Buffer.from(signature).toString("base64"),
-    challenge,
-  });
-
-  const expiresAt = Date.now() + expiresIn * 1000;
-
-  // ── Step 4: Build the token-gated Connection ───────────────────────────────
-  const connection = buildTeeConnection(authToken);
+  // ── Step 3: Build token-gated Connection + AnchorProvider ─────────────────
+  const connection = buildTeeConnection(token);
 
   const provider = new AnchorProvider(
     connection,
     {
       publicKey: wallet.publicKey,
-      signTransaction: async (tx) => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (tx as any).sign(wallet);
+      signTransaction: async <T extends Transaction | VersionedTransaction>(tx: T): Promise<T> => {
+        if (tx instanceof Transaction) {
+          tx.sign(wallet);
+        }
         return tx;
       },
-      signAllTransactions: async (txs) =>
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        txs.map((tx) => { (tx as any).sign(wallet); return tx; }),
+      signAllTransactions: async <T extends Transaction | VersionedTransaction>(txs: T[]): Promise<T[]> =>
+        txs.map((tx) => {
+          if (tx instanceof Transaction) {
+            tx.sign(wallet);
+          }
+          return tx;
+        }),
     },
     { commitment: "confirmed" },
   );
 
-  return { authToken, expiresAt, connection, provider };
+  return { authToken: token, expiresAt, connection, provider };
 }
 
 /**
@@ -117,7 +102,6 @@ export function isTeeSessionExpiring(session: TeeSession): boolean {
 
 /**
  * Refresh a TEE session if it is about to expire.
- * Pass the original wallet keypair used to create the session.
  */
 export async function refreshTeeSessionIfNeeded(
   session: TeeSession,

@@ -46,11 +46,11 @@ describe("04 — Transfer Hook", () => {
   const nonWhitelisted = anchor.web3.Keypair.generate();
 
   before(async () => {
-    await Promise.all([
-      connection.confirmTransaction(await connection.requestAirdrop(kycOracle.publicKey, 2e9)),
-      connection.confirmTransaction(await connection.requestAirdrop(sender.publicKey, 2e9)),
-      connection.confirmTransaction(await connection.requestAirdrop(receiver.publicKey, 2e9)),
-    ]);
+    await sendAndConfirmTransaction(connection, new Transaction().add(
+      SystemProgram.transfer({ fromPubkey: payer.publicKey, toPubkey: kycOracle.publicKey, lamports: 1e8 }),
+      SystemProgram.transfer({ fromPubkey: payer.publicKey, toPubkey: sender.publicKey, lamports: 1e8 }),
+      SystemProgram.transfer({ fromPubkey: payer.publicKey, toPubkey: receiver.publicKey, lamports: 1e8 }),
+    ), [payer]);
 
     sukukMint   = await createSukukMint(connection, payer, payer.publicKey, 450);
     zkMeMint    = await createMockSbtMint(connection, payer, payer.publicKey);

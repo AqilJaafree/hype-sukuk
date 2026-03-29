@@ -20,8 +20,14 @@ pub mod sukuk_rollup {
 
     // ── Base-chain instructions (send to Helius / base Solana RPC) ────────────
 
+    /// Creates the sukuk_vault PDA. Must be called before delegate_sukuk_vault.
+    /// Idempotent (init_if_needed) — safe to call multiple times.
+    pub fn initialize_sukuk_vault(ctx: Context<InitializeSukukVault>) -> Result<()> {
+        initialize_sukuk_vault::handler(ctx)
+    }
+
     /// Delegates the sukuk_vault PDA to the MagicBlock ephemeral rollup.
-    /// Call once, from base Solana, before starting a rollup session.
+    /// Call once, from base Solana, after initialize_sukuk_vault.
     pub fn delegate_sukuk_vault(ctx: Context<DelegateSukukVault>) -> Result<()> {
         delegate_accounts::handler(ctx)
     }

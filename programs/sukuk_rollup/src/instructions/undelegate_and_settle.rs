@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 use ephemeral_rollups_sdk::anchor::commit;
 use ephemeral_rollups_sdk::ephem::commit_and_undelegate_accounts;
 
-use crate::state::{SukukVault, DistributionRoot, cross_program::{read_investor_registry, write_investor_registry}};
+use crate::state::{SukukVault, DistributionRoot, cross_program::read_investor_registry};
 use crate::errors::RollupError;
 
 /// Commits rollup state back to base Solana and undelegates all accounts.
@@ -37,11 +37,20 @@ pub fn handler<'info>(
         &ctx.accounts.magic_program,
     )?;
 
-    // Write rollup_active = false back to base-chain InvestorRegistry.
-    // investor_registry is NOT delegated — this write goes directly to base chain.
-    let mut registry = read_investor_registry(&ctx.accounts.investor_registry)?;
-    registry.rollup_active = false;
-    write_investor_registry(&ctx.accounts.investor_registry, &registry)?;
+    // Update rollup_active = false via CPI to sukuk_hook.
+    // InvestorRegistry is owned by sukuk_hook — only it can write to it.
+    sukuk_hook::cpi::set_rollup_state(
+        CpiContext::new(
+            ctx.accounts.sukuk_hook_program.to_account_info(),
+            sukuk_hook::cpi::accounts::SetRollupState {
+                authority:         ctx.accounts.authority.to_account_info(),
+                mint:              ctx.accounts.mint.to_account_info(),
+                investor_registry: ctx.accounts.investor_registry.to_account_info(),
+            },
+        ),
+        false,
+        0,
+    )?;
 
     emit!(RollupSettled {
         mint: ctx.accounts.sukuk_vault.mint,
@@ -72,9 +81,16 @@ pub struct UndelegateAndSettle<'info> {
     )]
     pub distribution_root: Account<'info, DistributionRoot>,
 
-    /// CHECK: InvestorRegistry — mutable for rollup_active = false write.
+    /// CHECK: sukuk token mint — needed for set_rollup_state CPI seed derivation.
+    pub mint: AccountInfo<'info>,
+
+    /// CHECK: InvestorRegistry — mutable for rollup_active = false CPI.
     #[account(mut)]
     pub investor_registry: AccountInfo<'info>,
+
+    /// sukuk_hook program — required for the set_rollup_state CPI.
+    pub sukuk_hook_program: Program<'info, sukuk_hook::program::SukukHook>,
+
     // AccrualState accounts passed as remaining_accounts
 }
 

@@ -4,6 +4,47 @@ A compliant sukuk (Islamic bond) tokenisation platform on Solana using Token-202
 
 ---
 
+## The Problem
+
+### Islamic finance is locked out of DeFi
+
+The global sukuk market exceeds **$800 billion** in outstanding issuance, yet virtually none of it lives on-chain. The reason is not a lack of demand — it is a lack of infrastructure that can satisfy the three non-negotiable requirements of Islamic capital markets:
+
+| Requirement | Why it matters | What DeFi currently offers |
+|---|---|---|
+| **Sharia compliance** | Every token transfer must be restricted to verified, permissioned investors. Unrestricted trading is prohibited. | Open, permissionless tokens — no transfer controls |
+| **Regulatory KYC/AML** | Investors must be identity-verified before receiving any sukuk. Credentials must expire and be revocable. | Pseudonymous wallets, no identity layer |
+| **Investor privacy** | OTC order books, accrual balances, and profit distributions must not be visible to third parties on a public ledger | All state is public on-chain |
+
+Existing tokenisation attempts bolt compliance on at the application layer — a frontend that checks a list and hopes users don't bypass it. This is not compliance. Any wallet can call a smart contract directly.
+
+### What Hype Sukuk does differently
+
+Compliance is **enforced at the protocol layer**, not the UI layer:
+
+**1. Uncheckable transfer hook**
+Every `transfer_checked` on the sukuk token — regardless of which wallet, app, or program initiates it — fires `sukuk_hook` on-chain. Five checks run atomically: whitelist, zkMe SBT presence, KYC expiry, KYC level, and lock period. There is no code path that bypasses this. A malicious actor calling the Token-2022 program directly faces the same hook as a retail investor using the frontend.
+
+**2. Zero-knowledge KYC with on-chain attestation**
+Identity verification is done via zkMe's zkKYC — investors prove citizenship and AML clearance without exposing personal data. The on-chain record is a single hash (`SHA-256(appId:wallet)`) and a Soul Bound Token (SBT). No PII touches Solana. KYC credentials expire after 12 months and can be revoked instantly via a Helius webhook watching for SBT burn events.
+
+**3. Private profit accrual and OTC via MagicBlock TEE**
+Profit accrues every 30 seconds inside a MagicBlock Private Ephemeral Rollup secured by Intel TDX. This means:
+- **Zero base-chain fees** for the high-frequency accrual ticks
+- **Private order book** — OTC bids and asks are not visible to other applications or front-runners
+- **MEV protection** — matching happens inside the TEE before settlement touches the public chain
+
+**4. Scalable profit distribution via Merkle proofs**
+At settlement, one 32-byte Merkle root is written on-chain. Each investor independently claims their share with a proof. The issuer does not need to send N transactions for N holders.
+
+### Who this is for
+
+- **Sukuk issuers** who need a compliant, auditable tokenisation rail without building custom transfer restriction infrastructure
+- **Institutional investors** who require KYC-gated access and privacy guarantees before participating in on-chain fixed income
+- **Retail Muslim investors** who are currently excluded from sukuk markets due to high minimum investment sizes that tokenisation removes
+
+---
+
 ## Architecture
 
 ```

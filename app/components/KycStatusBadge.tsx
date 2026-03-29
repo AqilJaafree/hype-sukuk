@@ -4,17 +4,49 @@
  * Pencil import hint:
  *   "Import the KycStatusBadge component from app/components/KycStatusBadge.tsx"
  */
-type Status = "not-started" | "pending" | "approved" | "expired";
+import { useWallet } from "@solana/wallet-adapter-react";
+import { useEffect, useState } from "react";
+
+const APP_ID = process.env.NEXT_PUBLIC_ZKME_APP_ID ?? "";
+
+type Status = "not-started" | "checking" | "approved" | "expired";
 
 export default function KycStatusBadge() {
-  // TODO: read InvestorEntry PDA to derive status
-  const status = "not-started" as Status;
+  const { connected, publicKey } = useWallet();
+  const [status, setStatus] = useState<Status>("not-started");
+
+  useEffect(() => {
+    if (!connected || !publicKey) {
+      setStatus("not-started");
+      return;
+    }
+
+    setStatus("checking");
+
+    import("@zkmelabs/widget")
+      .then(({ verifyKycWithZkMeServices }) =>
+        verifyKycWithZkMeServices(APP_ID, publicKey.toBase58()),
+      )
+      .then(({ isGrant, verifyTime }) => {
+        if (!isGrant) {
+          setStatus("not-started");
+          return;
+        }
+        // If verifyTime is older than 12 months, treat as expired
+        if (verifyTime && Date.now() / 1000 - verifyTime > 365 * 24 * 3600) {
+          setStatus("expired");
+        } else {
+          setStatus("approved");
+        }
+      })
+      .catch(() => setStatus("not-started"));
+  }, [connected, publicKey?.toBase58()]);
 
   const config: Record<Status, { label: string; cls: string }> = {
-    "not-started": { label: "Not Started",  cls: "bg-border text-muted"           },
-    "pending":     { label: "Pending",       cls: "bg-gold/10 text-gold"           },
-    "approved":    { label: "KYC Approved",  cls: "bg-forestLight text-forest"     },
-    "expired":     { label: "KYC Expired",   cls: "bg-red/10 text-red"             },
+    "not-started": { label: "Not Started",  cls: "bg-border text-muted"       },
+    "checking":    { label: "Checking…",    cls: "bg-border text-muted"       },
+    "approved":    { label: "KYC Approved", cls: "bg-forestLight text-forest" },
+    "expired":     { label: "KYC Expired",  cls: "bg-red/10 text-red"         },
   };
 
   const { label, cls } = config[status];
