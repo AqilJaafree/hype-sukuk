@@ -1,5 +1,5 @@
 /**
- * NavBar — sticky top nav with mobile menu and Learn popup.
+ * NavBar — sticky top nav with mobile menu, Learn popup, and onboarding tour.
  *
  * Pencil import hint:
  *   "Import the NavBar component from app/components/NavBar.tsx"
@@ -9,6 +9,7 @@ import Link from "next/link";
 import { useRouter } from "next/router";
 import WalletButton from "@/components/WalletButton";
 import LearnModal from "@/components/LearnModal";
+import OnboardingTour, { TOUR_STORAGE_KEY } from "@/components/OnboardingTour";
 
 const links = [
   { href: "/",          label: "Dashboard" },
@@ -22,9 +23,19 @@ export default function NavBar() {
   const { pathname } = useRouter();
   const [menuOpen,  setMenuOpen]  = useState(false);
   const [learnOpen, setLearnOpen] = useState(false);
+  const [tourOpen,  setTourOpen]  = useState(false);
 
   const isActive = (href: string) =>
     href === "/" ? pathname === "/" : pathname.startsWith(href);
+
+  const openTour = () => {
+    // Clear the "done" flag so the tour can be shown again
+    if (typeof window !== "undefined") {
+      localStorage.removeItem(TOUR_STORAGE_KEY);
+    }
+    setMenuOpen(false);
+    setTourOpen(true);
+  };
 
   return (
     <>
@@ -57,6 +68,12 @@ export default function NavBar() {
               className="text-xs tracking-widest uppercase text-muted hover:text-text transition-colors"
             >
               Learn
+            </button>
+            <button
+              onClick={openTour}
+              className="text-xs tracking-widest uppercase text-forest hover:opacity-70 transition-opacity"
+            >
+              Get Started
             </button>
           </div>
 
@@ -99,12 +116,19 @@ export default function NavBar() {
               >
                 Learn
               </button>
+              <button
+                onClick={openTour}
+                className="block w-full text-left py-2.5 text-xs tracking-widest uppercase text-forest"
+              >
+                Get Started
+              </button>
             </div>
           </div>
         )}
       </nav>
 
-      <LearnModal open={learnOpen} onClose={() => setLearnOpen(false)} />
+      <LearnModal  open={learnOpen} onClose={() => setLearnOpen(false)} />
+      <OnboardingTour open={tourOpen} onClose={() => setTourOpen(false)} />
     </>
   );
 }

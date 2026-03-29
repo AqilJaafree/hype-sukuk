@@ -1,10 +1,12 @@
 import type { AppProps } from "next/app";
-import { useMemo } from "react";
+import { useMemo, useEffect, useState } from "react";
 import { Inter } from "next/font/google";
 import { ConnectionProvider, WalletProvider } from "@solana/wallet-adapter-react";
 import { WalletModalProvider } from "@solana/wallet-adapter-react-ui";
 import "@solana/wallet-adapter-react-ui/styles.css";
+import "@zkmelabs/widget/dist/style.css";
 import "../styles/globals.css";
+import OnboardingTour, { TOUR_STORAGE_KEY } from "@/components/OnboardingTour";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -17,13 +19,22 @@ const RPC_URL =
 
 export default function App({ Component, pageProps }: AppProps) {
   const wallets = useMemo(() => [], []);
+  const [tourOpen, setTourOpen] = useState(false);
+
+  // Auto-show tour on first ever visit
+  useEffect(() => {
+    if (!localStorage.getItem(TOUR_STORAGE_KEY)) {
+      setTourOpen(true);
+    }
+  }, []);
 
   return (
     <ConnectionProvider endpoint={RPC_URL}>
       <WalletProvider wallets={wallets} autoConnect>
         <WalletModalProvider>
           <div className={`${inter.variable} font-sans`}>
-            <Component {...pageProps} />
+            <Component {...pageProps} tourOpen={tourOpen} setTourOpen={setTourOpen} />
+            <OnboardingTour open={tourOpen} onClose={() => setTourOpen(false)} />
           </div>
         </WalletModalProvider>
       </WalletProvider>

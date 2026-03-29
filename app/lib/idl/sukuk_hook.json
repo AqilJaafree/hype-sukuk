@@ -1,0 +1,1168 @@
+{
+  "address": "3MrobtssgGyiuLVgheCqTSWJGWQxXDbPvMtip7tuMQkv",
+  "metadata": {
+    "name": "sukuk_hook",
+    "version": "0.1.0",
+    "spec": "0.1.0"
+  },
+  "instructions": [
+    {
+      "name": "add_investor",
+      "docs": [
+        "Adds an investor to the whitelist. Signed by kyc_oracle."
+      ],
+      "discriminator": [
+        63,
+        93,
+        233,
+        93,
+        140,
+        208,
+        152,
+        146
+      ],
+      "accounts": [
+        {
+          "name": "kyc_oracle",
+          "writable": true,
+          "signer": true,
+          "relations": [
+            "investor_registry"
+          ]
+        },
+        {
+          "name": "mint"
+        },
+        {
+          "name": "investor_registry",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  105,
+                  110,
+                  118,
+                  101,
+                  115,
+                  116,
+                  111,
+                  114,
+                  95,
+                  114,
+                  101,
+                  103,
+                  105,
+                  115,
+                  116,
+                  114,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "mint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "investor_entry",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  105,
+                  110,
+                  118,
+                  101,
+                  115,
+                  116,
+                  111,
+                  114,
+                  95,
+                  101,
+                  110,
+                  116,
+                  114,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "investor_registry"
+              },
+              {
+                "kind": "arg",
+                "path": "wallet"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "clock",
+          "address": "SysvarC1ock11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "wallet",
+          "type": "pubkey"
+        },
+        {
+          "name": "kyc_level",
+          "type": "u8"
+        },
+        {
+          "name": "kyc_expiry",
+          "type": "i64"
+        },
+        {
+          "name": "kyc_provider_hash",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "initialize_extra_account_meta_list",
+      "docs": [
+        "Registers the 6 extra accounts Token-2022 injects on every transfer_checked.",
+        "Must be called after initialize_registry and before any minting."
+      ],
+      "discriminator": [
+        92,
+        197,
+        174,
+        197,
+        41,
+        124,
+        19,
+        3
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "extra_account_meta_list",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  101,
+                  120,
+                  116,
+                  114,
+                  97,
+                  45,
+                  97,
+                  99,
+                  99,
+                  111,
+                  117,
+                  110,
+                  116,
+                  45,
+                  109,
+                  101,
+                  116,
+                  97,
+                  115
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "mint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "mint"
+        },
+        {
+          "name": "investor_registry",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  105,
+                  110,
+                  118,
+                  101,
+                  115,
+                  116,
+                  111,
+                  114,
+                  95,
+                  114,
+                  101,
+                  103,
+                  105,
+                  115,
+                  116,
+                  114,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "mint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "initialize_registry",
+      "docs": [
+        "Initialises the InvestorRegistry PDA for a given sukuk mint.",
+        "Called once by authority after the Token-2022 mint is created."
+      ],
+      "discriminator": [
+        189,
+        181,
+        20,
+        17,
+        174,
+        57,
+        249,
+        59
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "mint"
+        },
+        {
+          "name": "investor_registry",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  105,
+                  110,
+                  118,
+                  101,
+                  115,
+                  116,
+                  111,
+                  114,
+                  95,
+                  114,
+                  101,
+                  103,
+                  105,
+                  115,
+                  116,
+                  114,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "mint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "params",
+          "type": {
+            "defined": {
+              "name": "InitRegistryParams"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "remove_investor",
+      "docs": [
+        "Removes an investor from the whitelist. Signed by kyc_oracle or authority."
+      ],
+      "discriminator": [
+        93,
+        0,
+        162,
+        199,
+        76,
+        5,
+        180,
+        2
+      ],
+      "accounts": [
+        {
+          "name": "signer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "mint"
+        },
+        {
+          "name": "investor_registry",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  105,
+                  110,
+                  118,
+                  101,
+                  115,
+                  116,
+                  111,
+                  114,
+                  95,
+                  114,
+                  101,
+                  103,
+                  105,
+                  115,
+                  116,
+                  114,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "mint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "investor_entry",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  105,
+                  110,
+                  118,
+                  101,
+                  115,
+                  116,
+                  111,
+                  114,
+                  95,
+                  101,
+                  110,
+                  116,
+                  114,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "investor_registry"
+              },
+              {
+                "kind": "arg",
+                "path": "wallet"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "wallet",
+          "type": "pubkey"
+        }
+      ]
+    },
+    {
+      "name": "renew_investor",
+      "docs": [
+        "Renews an investor's KYC expiry and provider hash. Signed by kyc_oracle."
+      ],
+      "discriminator": [
+        191,
+        198,
+        246,
+        187,
+        172,
+        4,
+        124,
+        51
+      ],
+      "accounts": [
+        {
+          "name": "kyc_oracle",
+          "signer": true,
+          "relations": [
+            "investor_registry"
+          ]
+        },
+        {
+          "name": "mint"
+        },
+        {
+          "name": "investor_registry",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  105,
+                  110,
+                  118,
+                  101,
+                  115,
+                  116,
+                  111,
+                  114,
+                  95,
+                  114,
+                  101,
+                  103,
+                  105,
+                  115,
+                  116,
+                  114,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "mint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "investor_entry",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  105,
+                  110,
+                  118,
+                  101,
+                  115,
+                  116,
+                  111,
+                  114,
+                  95,
+                  101,
+                  110,
+                  116,
+                  114,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "investor_registry"
+              },
+              {
+                "kind": "arg",
+                "path": "wallet"
+              }
+            ]
+          }
+        },
+        {
+          "name": "clock",
+          "address": "SysvarC1ock11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "wallet",
+          "type": "pubkey"
+        },
+        {
+          "name": "new_kyc_expiry",
+          "type": "i64"
+        },
+        {
+          "name": "new_kyc_provider_hash",
+          "type": {
+            "array": [
+              "u8",
+              32
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "set_rollup_state",
+      "docs": [
+        "Updates rollup lifecycle flags on the InvestorRegistry.",
+        "Called via CPI by sukuk_rollup after delegation / undelegation."
+      ],
+      "discriminator": [
+        62,
+        193,
+        180,
+        174,
+        164,
+        216,
+        56,
+        50
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "docs": [
+            "The issuer authority — must sign."
+          ],
+          "signer": true,
+          "relations": [
+            "investor_registry"
+          ]
+        },
+        {
+          "name": "mint"
+        },
+        {
+          "name": "investor_registry",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  105,
+                  110,
+                  118,
+                  101,
+                  115,
+                  116,
+                  111,
+                  114,
+                  95,
+                  114,
+                  101,
+                  103,
+                  105,
+                  115,
+                  116,
+                  114,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "mint"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "rollup_active",
+          "type": "bool"
+        },
+        {
+          "name": "session_start",
+          "type": "i64"
+        }
+      ]
+    },
+    {
+      "name": "transfer_hook",
+      "docs": [
+        "Called by Token-2022 on every transfer_checked. Read-only — enforces",
+        "whitelist, zkMe SBT, KYC expiry, KYC level, and lock period."
+      ],
+      "discriminator": [
+        220,
+        57,
+        220,
+        152,
+        126,
+        125,
+        97,
+        168
+      ],
+      "accounts": [
+        {
+          "name": "source_token"
+        },
+        {
+          "name": "mint"
+        },
+        {
+          "name": "destination_token"
+        },
+        {
+          "name": "owner"
+        },
+        {
+          "name": "extra_account_meta_list",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  101,
+                  120,
+                  116,
+                  114,
+                  97,
+                  45,
+                  97,
+                  99,
+                  99,
+                  111,
+                  117,
+                  110,
+                  116,
+                  45,
+                  109,
+                  101,
+                  116,
+                  97,
+                  115
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "mint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "investor_registry",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  105,
+                  110,
+                  118,
+                  101,
+                  115,
+                  116,
+                  111,
+                  114,
+                  95,
+                  114,
+                  101,
+                  103,
+                  105,
+                  115,
+                  116,
+                  114,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "mint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "investor_entry",
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  105,
+                  110,
+                  118,
+                  101,
+                  115,
+                  116,
+                  111,
+                  114,
+                  95,
+                  101,
+                  110,
+                  116,
+                  114,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "investor_registry"
+              },
+              {
+                "kind": "account",
+                "path": "destination_token.owner"
+              }
+            ]
+          }
+        },
+        {
+          "name": "clock",
+          "address": "SysvarC1ock11111111111111111111111111111111"
+        },
+        {
+          "name": "token_2022_program"
+        },
+        {
+          "name": "associated_token_program"
+        },
+        {
+          "name": "zkme_sbt_account"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "update_lock_period",
+      "docs": [
+        "Updates the lock_until timestamp. Signed by authority."
+      ],
+      "discriminator": [
+        211,
+        76,
+        225,
+        13,
+        40,
+        108,
+        17,
+        104
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "signer": true,
+          "relations": [
+            "investor_registry"
+          ]
+        },
+        {
+          "name": "mint"
+        },
+        {
+          "name": "investor_registry",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  105,
+                  110,
+                  118,
+                  101,
+                  115,
+                  116,
+                  111,
+                  114,
+                  95,
+                  114,
+                  101,
+                  103,
+                  105,
+                  115,
+                  116,
+                  114,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "mint"
+              }
+            ]
+          }
+        }
+      ],
+      "args": [
+        {
+          "name": "new_lock_until",
+          "type": "i64"
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "InvestorEntry",
+      "discriminator": [
+        151,
+        207,
+        223,
+        114,
+        233,
+        195,
+        110,
+        39
+      ]
+    },
+    {
+      "name": "InvestorRegistry",
+      "discriminator": [
+        205,
+        137,
+        9,
+        185,
+        171,
+        210,
+        247,
+        123
+      ]
+    }
+  ],
+  "events": [
+    {
+      "name": "InvestorAdded",
+      "discriminator": [
+        183,
+        101,
+        15,
+        88,
+        227,
+        192,
+        175,
+        131
+      ]
+    },
+    {
+      "name": "InvestorRemoved",
+      "discriminator": [
+        250,
+        250,
+        178,
+        150,
+        183,
+        198,
+        202,
+        239
+      ]
+    },
+    {
+      "name": "InvestorRenewed",
+      "discriminator": [
+        34,
+        39,
+        196,
+        224,
+        124,
+        175,
+        87,
+        234
+      ]
+    },
+    {
+      "name": "TransferApproved",
+      "discriminator": [
+        96,
+        255,
+        177,
+        199,
+        173,
+        241,
+        82,
+        35
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "NotWhitelisted",
+      "msg": "Destination wallet is not on the investor whitelist"
+    },
+    {
+      "code": 6001,
+      "name": "TransferLocked",
+      "msg": "Sukuk transfers are locked until the lock period expires"
+    },
+    {
+      "code": 6002,
+      "name": "InsufficientKycLevel",
+      "msg": "Insufficient KYC level for this transfer"
+    },
+    {
+      "code": 6003,
+      "name": "KycExpired",
+      "msg": "KYC credential has expired — investor must re-verify"
+    },
+    {
+      "code": 6004,
+      "name": "NoZkCredential",
+      "msg": "No valid zkMe credential SBT found on destination wallet"
+    },
+    {
+      "code": 6005,
+      "name": "InvalidCredentialMint",
+      "msg": "Credential SBT mint does not match registry zkMe program mint"
+    },
+    {
+      "code": 6006,
+      "name": "CredentialOwnerMismatch",
+      "msg": "Credential SBT owner does not match destination token account owner"
+    },
+    {
+      "code": 6007,
+      "name": "UnauthorizedAuthority",
+      "msg": "Signer is not the registry authority"
+    },
+    {
+      "code": 6008,
+      "name": "RollupAlreadyActive",
+      "msg": "Rollup session is already active"
+    },
+    {
+      "code": 6009,
+      "name": "InvalidExpiry",
+      "msg": "KYC expiry timestamp must be in the future"
+    }
+  ],
+  "types": [
+    {
+      "name": "InitRegistryParams",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "kyc_oracle",
+            "type": "pubkey"
+          },
+          {
+            "name": "zkme_credential_mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "lock_until",
+            "type": "i64"
+          },
+          {
+            "name": "profit_rate_bps",
+            "type": "u16"
+          },
+          {
+            "name": "min_kyc_level",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "InvestorAdded",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "registry",
+            "type": "pubkey"
+          },
+          {
+            "name": "wallet",
+            "type": "pubkey"
+          },
+          {
+            "name": "kyc_level",
+            "type": "u8"
+          },
+          {
+            "name": "kyc_expiry",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "InvestorEntry",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "wallet",
+            "type": "pubkey"
+          },
+          {
+            "name": "approved_at",
+            "type": "i64"
+          },
+          {
+            "name": "kyc_level",
+            "type": "u8"
+          },
+          {
+            "name": "kyc_expiry",
+            "type": "i64"
+          },
+          {
+            "name": "kyc_provider_hash",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "InvestorRegistry",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "authority",
+            "type": "pubkey"
+          },
+          {
+            "name": "kyc_oracle",
+            "type": "pubkey"
+          },
+          {
+            "name": "zkme_credential_mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "lock_until",
+            "type": "i64"
+          },
+          {
+            "name": "profit_rate_bps",
+            "type": "u16"
+          },
+          {
+            "name": "min_kyc_level",
+            "type": "u8"
+          },
+          {
+            "name": "investor_count",
+            "type": "u64"
+          },
+          {
+            "name": "rollup_active",
+            "type": "bool"
+          },
+          {
+            "name": "session_start",
+            "type": "i64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "InvestorRemoved",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "registry",
+            "type": "pubkey"
+          },
+          {
+            "name": "wallet",
+            "type": "pubkey"
+          }
+        ]
+      }
+    },
+    {
+      "name": "InvestorRenewed",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "registry",
+            "type": "pubkey"
+          },
+          {
+            "name": "wallet",
+            "type": "pubkey"
+          },
+          {
+            "name": "new_expiry",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "TransferApproved",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "from",
+            "type": "pubkey"
+          },
+          {
+            "name": "to",
+            "type": "pubkey"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          }
+        ]
+      }
+    }
+  ]
+}

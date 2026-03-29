@@ -1,0 +1,1980 @@
+{
+  "address": "B6KV6L7ZUC4mNf8P6ccudTneJqrE4Zsf7qQc2yzToqpt",
+  "metadata": {
+    "name": "sukuk_rollup",
+    "version": "0.1.0",
+    "spec": "0.1.0"
+  },
+  "instructions": [
+    {
+      "name": "accrue_profit",
+      "docs": [
+        "Accrues profit for up to 10 holders (passed as remaining_accounts).",
+        "Called automatically by the native rollup crank."
+      ],
+      "discriminator": [
+        54,
+        101,
+        135,
+        235,
+        178,
+        200,
+        96,
+        234
+      ],
+      "accounts": [
+        {
+          "name": "investor_registry"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "claim_profit",
+      "docs": [
+        "Verifies a Merkle proof against the committed DistributionRoot and",
+        "transfers the holder's accrued USDC profit from the vault.",
+        "Call on base Solana after undelegate_and_settle."
+      ],
+      "discriminator": [
+        234,
+        73,
+        53,
+        22,
+        182,
+        46,
+        83,
+        104
+      ],
+      "accounts": [
+        {
+          "name": "holder",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "distribution_root",
+          "docs": [
+            "The committed distribution root for this period."
+          ]
+        },
+        {
+          "name": "sukuk_vault",
+          "docs": [
+            "The sukuk vault — signs the USDC transfer as PDA authority."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  117,
+                  107,
+                  117,
+                  107,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "sukuk_vault.mint",
+                "account": "SukukVault"
+              }
+            ]
+          }
+        },
+        {
+          "name": "vault_usdc_ata",
+          "docs": [
+            "USDC ATA owned by sukuk_vault."
+          ],
+          "writable": true
+        },
+        {
+          "name": "holder_usdc_ata",
+          "docs": [
+            "Holder's USDC ATA — receives the profit transfer."
+          ],
+          "writable": true
+        },
+        {
+          "name": "usdc_mint"
+        },
+        {
+          "name": "claim_receipt",
+          "docs": [
+            "Created here; its existence prevents a second claim for the same period."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  99,
+                  108,
+                  97,
+                  105,
+                  109,
+                  95,
+                  114,
+                  101,
+                  99,
+                  101,
+                  105,
+                  112,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "distribution_root"
+              },
+              {
+                "kind": "account",
+                "path": "holder"
+              }
+            ]
+          }
+        },
+        {
+          "name": "token_program",
+          "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "args",
+          "type": {
+            "defined": {
+              "name": "ClaimProfitArgs"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "commit_distribution",
+      "docs": [
+        "Finalises accruals into a Merkle root. Must be called before undelegating."
+      ],
+      "discriminator": [
+        29,
+        253,
+        98,
+        107,
+        167,
+        153,
+        192,
+        227
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "distribution_root",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  100,
+                  105,
+                  115,
+                  116,
+                  114,
+                  105,
+                  98,
+                  117,
+                  116,
+                  105,
+                  111,
+                  110,
+                  95,
+                  114,
+                  111,
+                  111,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "mint"
+              },
+              {
+                "kind": "arg",
+                "path": "args.period_start"
+              }
+            ]
+          }
+        },
+        {
+          "name": "mint"
+        },
+        {
+          "name": "investor_registry"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "args",
+          "type": {
+            "defined": {
+              "name": "CommitDistributionArgs"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "delegate_sukuk_vault",
+      "docs": [
+        "Delegates the sukuk_vault PDA to the MagicBlock ephemeral rollup.",
+        "Call once, from base Solana, after initialize_sukuk_vault."
+      ],
+      "discriminator": [
+        94,
+        246,
+        184,
+        82,
+        189,
+        155,
+        241,
+        170
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "buffer_sukuk_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  98,
+                  117,
+                  102,
+                  102,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "sukuk_vault"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                149,
+                241,
+                172,
+                114,
+                126,
+                180,
+                178,
+                71,
+                132,
+                229,
+                72,
+                249,
+                92,
+                40,
+                191,
+                145,
+                220,
+                139,
+                73,
+                195,
+                39,
+                34,
+                15,
+                187,
+                66,
+                189,
+                197,
+                48,
+                4,
+                45,
+                202,
+                137
+              ]
+            }
+          }
+        },
+        {
+          "name": "delegation_record_sukuk_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  100,
+                  101,
+                  108,
+                  101,
+                  103,
+                  97,
+                  116,
+                  105,
+                  111,
+                  110
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "sukuk_vault"
+              }
+            ],
+            "program": {
+              "kind": "account",
+              "path": "delegation_program"
+            }
+          }
+        },
+        {
+          "name": "delegation_metadata_sukuk_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  100,
+                  101,
+                  108,
+                  101,
+                  103,
+                  97,
+                  116,
+                  105,
+                  111,
+                  110,
+                  45,
+                  109,
+                  101,
+                  116,
+                  97,
+                  100,
+                  97,
+                  116,
+                  97
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "sukuk_vault"
+              }
+            ],
+            "program": {
+              "kind": "account",
+              "path": "delegation_program"
+            }
+          }
+        },
+        {
+          "name": "sukuk_vault",
+          "docs": [
+            "Must use AccountInfo (not Account<>) with the `del` constraint — SDK requirement."
+          ],
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  117,
+                  107,
+                  117,
+                  107,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "mint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "mint"
+        },
+        {
+          "name": "investor_registry",
+          "docs": [
+            "Not delegated; stays on base Solana for compliance."
+          ],
+          "writable": true
+        },
+        {
+          "name": "validator",
+          "docs": [
+            "routes the delegation to the correct private ephemeral rollup."
+          ],
+          "optional": true
+        },
+        {
+          "name": "sukuk_hook_program",
+          "docs": [
+            "sukuk_hook program — required for the set_rollup_state CPI."
+          ],
+          "address": "3MrobtssgGyiuLVgheCqTSWJGWQxXDbPvMtip7tuMQkv"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        },
+        {
+          "name": "owner_program",
+          "address": "B6KV6L7ZUC4mNf8P6ccudTneJqrE4Zsf7qQc2yzToqpt"
+        },
+        {
+          "name": "delegation_program",
+          "address": "DELeGGvXpWV2fqJUhqcF5ZSYMS4JTLjteaAMARRSaeSh"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "initialize_accrual_state",
+      "docs": [
+        "Creates an AccrualState for a new holder inside the rollup session."
+      ],
+      "discriminator": [
+        38,
+        104,
+        154,
+        85,
+        36,
+        161,
+        171,
+        208
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "accrual_state",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  97,
+                  99,
+                  99,
+                  114,
+                  117,
+                  97,
+                  108,
+                  95,
+                  115,
+                  116,
+                  97,
+                  116,
+                  101
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "mint"
+              },
+              {
+                "kind": "arg",
+                "path": "holder"
+              }
+            ]
+          }
+        },
+        {
+          "name": "mint"
+        },
+        {
+          "name": "holder_token_account",
+          "docs": [
+            "The holder's sukuk token account — read for initial balance snapshot."
+          ]
+        },
+        {
+          "name": "investor_registry"
+        },
+        {
+          "name": "token_program"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "holder",
+          "type": "pubkey"
+        }
+      ]
+    },
+    {
+      "name": "initialize_sukuk_vault",
+      "docs": [
+        "Creates the sukuk_vault PDA. Must be called before delegate_sukuk_vault.",
+        "Idempotent (init_if_needed) — safe to call multiple times."
+      ],
+      "discriminator": [
+        189,
+        5,
+        169,
+        117,
+        238,
+        53,
+        202,
+        52
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "mint"
+        },
+        {
+          "name": "sukuk_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  117,
+                  107,
+                  117,
+                  107,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "mint"
+              }
+            ]
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "match_otc_order",
+      "docs": [
+        "Matches a bid and ask OTC order. Records intent; actual transfer is",
+        "executed post-settlement via transfer_checked on base Solana."
+      ],
+      "discriminator": [
+        12,
+        171,
+        168,
+        99,
+        223,
+        78,
+        27,
+        25
+      ],
+      "accounts": [
+        {
+          "name": "matcher",
+          "signer": true
+        },
+        {
+          "name": "bid_order",
+          "writable": true
+        },
+        {
+          "name": "ask_order",
+          "writable": true
+        },
+        {
+          "name": "investor_registry",
+          "docs": [
+            "Key is verified on-chain via seeds derivation against SUKUK_HOOK_ID."
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  105,
+                  110,
+                  118,
+                  101,
+                  115,
+                  116,
+                  111,
+                  114,
+                  95,
+                  114,
+                  101,
+                  103,
+                  105,
+                  115,
+                  116,
+                  114,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "bid_order.mint",
+                "account": "OtcOrder"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                35,
+                15,
+                77,
+                145,
+                178,
+                242,
+                117,
+                235,
+                143,
+                250,
+                6,
+                51,
+                122,
+                18,
+                72,
+                198,
+                216,
+                37,
+                201,
+                160,
+                17,
+                158,
+                56,
+                119,
+                14,
+                119,
+                213,
+                197,
+                138,
+                233,
+                155,
+                111
+              ]
+            }
+          }
+        },
+        {
+          "name": "bid_investor_entry",
+          "docs": [
+            "Key is verified on-chain via seeds derivation against SUKUK_HOOK_ID."
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  105,
+                  110,
+                  118,
+                  101,
+                  115,
+                  116,
+                  111,
+                  114,
+                  95,
+                  101,
+                  110,
+                  116,
+                  114,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "investor_registry"
+              },
+              {
+                "kind": "account",
+                "path": "bid_order.owner",
+                "account": "OtcOrder"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                35,
+                15,
+                77,
+                145,
+                178,
+                242,
+                117,
+                235,
+                143,
+                250,
+                6,
+                51,
+                122,
+                18,
+                72,
+                198,
+                216,
+                37,
+                201,
+                160,
+                17,
+                158,
+                56,
+                119,
+                14,
+                119,
+                213,
+                197,
+                138,
+                233,
+                155,
+                111
+              ]
+            }
+          }
+        },
+        {
+          "name": "ask_investor_entry",
+          "docs": [
+            "Key is verified on-chain via seeds derivation against SUKUK_HOOK_ID."
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  105,
+                  110,
+                  118,
+                  101,
+                  115,
+                  116,
+                  111,
+                  114,
+                  95,
+                  101,
+                  110,
+                  116,
+                  114,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "investor_registry"
+              },
+              {
+                "kind": "account",
+                "path": "ask_order.owner",
+                "account": "OtcOrder"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                35,
+                15,
+                77,
+                145,
+                178,
+                242,
+                117,
+                235,
+                143,
+                250,
+                6,
+                51,
+                122,
+                18,
+                72,
+                198,
+                216,
+                37,
+                201,
+                160,
+                17,
+                158,
+                56,
+                119,
+                14,
+                119,
+                213,
+                197,
+                138,
+                233,
+                155,
+                111
+              ]
+            }
+          }
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "place_otc_order",
+      "docs": [
+        "Places a Buy or Sell OTC order for whitelisted investors."
+      ],
+      "discriminator": [
+        70,
+        192,
+        214,
+        10,
+        48,
+        41,
+        94,
+        116
+      ],
+      "accounts": [
+        {
+          "name": "owner",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "otc_order",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  111,
+                  116,
+                  99,
+                  95,
+                  111,
+                  114,
+                  100,
+                  101,
+                  114
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "mint"
+              },
+              {
+                "kind": "account",
+                "path": "owner"
+              },
+              {
+                "kind": "arg",
+                "path": "args.nonce"
+              }
+            ]
+          }
+        },
+        {
+          "name": "mint"
+        },
+        {
+          "name": "investor_registry",
+          "docs": [
+            "Key is verified on-chain via seeds derivation against SUKUK_HOOK_ID."
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  105,
+                  110,
+                  118,
+                  101,
+                  115,
+                  116,
+                  111,
+                  114,
+                  95,
+                  114,
+                  101,
+                  103,
+                  105,
+                  115,
+                  116,
+                  114,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "mint"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                35,
+                15,
+                77,
+                145,
+                178,
+                242,
+                117,
+                235,
+                143,
+                250,
+                6,
+                51,
+                122,
+                18,
+                72,
+                198,
+                216,
+                37,
+                201,
+                160,
+                17,
+                158,
+                56,
+                119,
+                14,
+                119,
+                213,
+                197,
+                138,
+                233,
+                155,
+                111
+              ]
+            }
+          }
+        },
+        {
+          "name": "investor_entry",
+          "docs": [
+            "Key is verified on-chain via seeds derivation against SUKUK_HOOK_ID."
+          ],
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  105,
+                  110,
+                  118,
+                  101,
+                  115,
+                  116,
+                  111,
+                  114,
+                  95,
+                  101,
+                  110,
+                  116,
+                  114,
+                  121
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "investor_registry"
+              },
+              {
+                "kind": "account",
+                "path": "owner"
+              }
+            ],
+            "program": {
+              "kind": "const",
+              "value": [
+                35,
+                15,
+                77,
+                145,
+                178,
+                242,
+                117,
+                235,
+                143,
+                250,
+                6,
+                51,
+                122,
+                18,
+                72,
+                198,
+                216,
+                37,
+                201,
+                160,
+                17,
+                158,
+                56,
+                119,
+                14,
+                119,
+                213,
+                197,
+                138,
+                233,
+                155,
+                111
+              ]
+            }
+          }
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "args",
+          "type": {
+            "defined": {
+              "name": "PlaceOtcOrderArgs"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "process_undelegation",
+      "discriminator": [
+        196,
+        28,
+        41,
+        206,
+        48,
+        37,
+        51,
+        167
+      ],
+      "accounts": [
+        {
+          "name": "base_account",
+          "writable": true
+        },
+        {
+          "name": "buffer"
+        },
+        {
+          "name": "payer",
+          "writable": true
+        },
+        {
+          "name": "system_program"
+        }
+      ],
+      "args": [
+        {
+          "name": "account_seeds",
+          "type": {
+            "vec": "bytes"
+          }
+        }
+      ]
+    },
+    {
+      "name": "schedule_profit_crank",
+      "docs": [
+        "Schedules a native rollup crank that calls accrue_profit every N ms.",
+        "No external server needed — MagicBlock's scheduler handles timing."
+      ],
+      "discriminator": [
+        47,
+        28,
+        199,
+        140,
+        102,
+        252,
+        118,
+        26
+      ],
+      "accounts": [
+        {
+          "name": "payer",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "investor_registry"
+        },
+        {
+          "name": "magic_program",
+          "address": "Magic11111111111111111111111111111111111111"
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "args",
+          "type": {
+            "defined": {
+              "name": "ScheduleCrankArgs"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "undelegate_and_settle",
+      "docs": [
+        "Commits all rollup state to base Solana and undelegates all accounts.",
+        "Pass all AccrualState accounts as remaining_accounts."
+      ],
+      "discriminator": [
+        228,
+        105,
+        1,
+        151,
+        123,
+        9,
+        243,
+        231
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "sukuk_vault",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  115,
+                  117,
+                  107,
+                  117,
+                  107,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "sukuk_vault.mint",
+                "account": "SukukVault"
+              }
+            ]
+          }
+        },
+        {
+          "name": "distribution_root",
+          "docs": [
+            "The distribution root committed via commit_distribution."
+          ],
+          "writable": true
+        },
+        {
+          "name": "mint"
+        },
+        {
+          "name": "investor_registry",
+          "writable": true
+        },
+        {
+          "name": "sukuk_hook_program",
+          "docs": [
+            "sukuk_hook program — required for the set_rollup_state CPI."
+          ],
+          "address": "3MrobtssgGyiuLVgheCqTSWJGWQxXDbPvMtip7tuMQkv"
+        },
+        {
+          "name": "magic_program",
+          "address": "Magic11111111111111111111111111111111111111"
+        },
+        {
+          "name": "magic_context",
+          "writable": true,
+          "address": "MagicContext1111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    }
+  ],
+  "accounts": [
+    {
+      "name": "AccrualState",
+      "discriminator": [
+        184,
+        54,
+        155,
+        209,
+        59,
+        54,
+        244,
+        162
+      ]
+    },
+    {
+      "name": "ClaimReceipt",
+      "discriminator": [
+        223,
+        233,
+        11,
+        229,
+        124,
+        165,
+        207,
+        28
+      ]
+    },
+    {
+      "name": "DistributionRoot",
+      "discriminator": [
+        225,
+        98,
+        34,
+        160,
+        164,
+        47,
+        254,
+        172
+      ]
+    },
+    {
+      "name": "OtcOrder",
+      "discriminator": [
+        57,
+        92,
+        208,
+        168,
+        14,
+        210,
+        244,
+        175
+      ]
+    },
+    {
+      "name": "SukukVault",
+      "discriminator": [
+        138,
+        135,
+        46,
+        105,
+        160,
+        10,
+        3,
+        131
+      ]
+    }
+  ],
+  "events": [
+    {
+      "name": "DistributionCommitted",
+      "discriminator": [
+        230,
+        198,
+        40,
+        122,
+        94,
+        67,
+        184,
+        240
+      ]
+    },
+    {
+      "name": "OtcMatched",
+      "discriminator": [
+        142,
+        169,
+        138,
+        166,
+        78,
+        5,
+        140,
+        86
+      ]
+    },
+    {
+      "name": "ProfitAccrued",
+      "discriminator": [
+        71,
+        4,
+        180,
+        207,
+        142,
+        126,
+        73,
+        20
+      ]
+    },
+    {
+      "name": "ProfitClaimed",
+      "discriminator": [
+        58,
+        204,
+        235,
+        33,
+        53,
+        83,
+        86,
+        24
+      ]
+    },
+    {
+      "name": "RollupSettled",
+      "discriminator": [
+        33,
+        142,
+        76,
+        75,
+        197,
+        117,
+        37,
+        5
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "AccountNotDelegated",
+      "msg": "Account is not delegated to the rollup"
+    },
+    {
+      "code": 6001,
+      "name": "OrderExpired",
+      "msg": "Order has expired"
+    },
+    {
+      "code": 6002,
+      "name": "OrderAlreadyFilled",
+      "msg": "Order is already filled"
+    },
+    {
+      "code": 6003,
+      "name": "PriceMismatch",
+      "msg": "Bid price is below ask price"
+    },
+    {
+      "code": 6004,
+      "name": "BothSidesMustBeOpposite",
+      "msg": "Both orders must be on opposite sides"
+    },
+    {
+      "code": 6005,
+      "name": "CounterpartyNotWhitelisted",
+      "msg": "Counterparty is not on the investor whitelist"
+    },
+    {
+      "code": 6006,
+      "name": "DistributionAlreadyCommitted",
+      "msg": "Distribution for this period has already been committed"
+    },
+    {
+      "code": 6007,
+      "name": "RollupNotActive",
+      "msg": "No active rollup session"
+    },
+    {
+      "code": 6008,
+      "name": "RollupAlreadyActive",
+      "msg": "Rollup session is already active"
+    },
+    {
+      "code": 6009,
+      "name": "EmptyAccrualStates",
+      "msg": "No accrual states provided for distribution"
+    },
+    {
+      "code": 6010,
+      "name": "InvalidAmount",
+      "msg": "Order amount must be greater than zero"
+    },
+    {
+      "code": 6011,
+      "name": "InvalidPrice",
+      "msg": "Order price must be greater than zero"
+    },
+    {
+      "code": 6012,
+      "name": "InvalidExpiry",
+      "msg": "Order expiry must be in the future"
+    },
+    {
+      "code": 6013,
+      "name": "MintMismatch",
+      "msg": "Mint mismatch between orders"
+    },
+    {
+      "code": 6014,
+      "name": "DistributionNotCommitted",
+      "msg": "Distribution has not been committed yet"
+    },
+    {
+      "code": 6015,
+      "name": "InvalidMerkleProof",
+      "msg": "Merkle proof is invalid for this claim"
+    }
+  ],
+  "types": [
+    {
+      "name": "AccrualState",
+      "docs": [
+        "Per-holder profit accrual state.",
+        "Created inside the rollup session; written back to base Solana on settlement.",
+        "",
+        "seeds: [\"accrual_state\", mint, holder]",
+        "space: 8 + 32 + 32 + 8 + 8 + 8 + 1 = 97"
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "holder",
+            "docs": [
+              "The holder's wallet pubkey."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "mint",
+            "docs": [
+              "The sukuk token mint."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "accrued_profit_usdc",
+            "docs": [
+              "Accumulated profit in USDC (6 decimals)."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "last_tick",
+            "docs": [
+              "Unix timestamp of the last accrual tick."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "token_balance_snapshot",
+            "docs": [
+              "Sukuk token balance snapshot at the last tick.",
+              "Updated each tick so balance changes are reflected progressively."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ClaimProfitArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "amount_usdc",
+            "docs": [
+              "Amount of USDC (6 decimals) the holder is claiming — must match the leaf."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "leaf_index",
+            "docs": [
+              "Index of the holder's leaf in the Merkle tree."
+            ],
+            "type": "u32"
+          },
+          {
+            "name": "proof",
+            "docs": [
+              "Sibling hashes forming the Merkle proof path."
+            ],
+            "type": {
+              "vec": {
+                "array": [
+                  "u8",
+                  32
+                ]
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "ClaimReceipt",
+      "docs": [
+        "Created when a holder claims their profit from a distribution period.",
+        "Existence of this PDA prevents double-claiming.",
+        "",
+        "seeds: [\"claim_receipt\", distribution_root, holder]",
+        "space: 8 + 32 + 8 + 8 + 1 = 57"
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "holder",
+            "docs": [
+              "The holder that submitted the claim."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "amount_usdc",
+            "docs": [
+              "Amount of USDC (6 decimals) transferred to the holder."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "claimed_at",
+            "docs": [
+              "Unix timestamp of the claim."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "CommitDistributionArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "period_start",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "DistributionCommitted",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "merkle_root",
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "total_usdc",
+            "type": "u64"
+          },
+          {
+            "name": "period_end",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "DistributionRoot",
+      "docs": [
+        "Merkle root of all accrual states for a profit distribution period.",
+        "Written by commit_distribution inside the rollup, then committed to base",
+        "Solana during undelegate_and_settle.",
+        "",
+        "seeds: [\"distribution_root\", mint, period_start_as_le_bytes]",
+        "space: 8 + 32 + 32 + 8 + 8 + 8 + 8 + 1 + 1 = 106"
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "merkle_root",
+            "docs": [
+              "SHA-256 Merkle root over all (holder, accrued_profit_usdc) leaves."
+            ],
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "total_profit_usdc",
+            "docs": [
+              "Total USDC across all holders (6 decimals)."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "period_start",
+            "type": "i64"
+          },
+          {
+            "name": "period_end",
+            "type": "i64"
+          },
+          {
+            "name": "holder_count",
+            "type": "u64"
+          },
+          {
+            "name": "committed",
+            "docs": [
+              "Set true after commit_distribution. Guards against double-commit."
+            ],
+            "type": "bool"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "OrderSide",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Buy"
+          },
+          {
+            "name": "Sell"
+          }
+        ]
+      }
+    },
+    {
+      "name": "OtcMatched",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "bid_owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "ask_owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          },
+          {
+            "name": "price_usdc",
+            "type": "u64"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "OtcOrder",
+      "docs": [
+        "An OTC order created inside the rollup.",
+        "Matching records intent only — actual token transfer happens",
+        "post-undelegate on base Solana via transfer_checked (enforcing TransferHook).",
+        "",
+        "seeds: [\"otc_order\", mint, owner, nonce_as_le_bytes]",
+        "space: 8 + 32 + 32 + 1 + 8 + 8 + 8 + 1 + 1 = 99"
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "owner",
+            "type": "pubkey"
+          },
+          {
+            "name": "mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "side",
+            "docs": [
+              "Buy or Sell side."
+            ],
+            "type": {
+              "defined": {
+                "name": "OrderSide"
+              }
+            }
+          },
+          {
+            "name": "amount",
+            "docs": [
+              "Token units (sukuk decimals)."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "price_usdc",
+            "docs": [
+              "Price per token in USDC (6 decimals)."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "expiry",
+            "docs": [
+              "Unix timestamp after which the order is no longer valid."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "filled",
+            "docs": [
+              "Set true when matched by match_otc_order."
+            ],
+            "type": "bool"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "PlaceOtcOrderArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "side",
+            "type": {
+              "defined": {
+                "name": "OrderSide"
+              }
+            }
+          },
+          {
+            "name": "amount",
+            "type": "u64"
+          },
+          {
+            "name": "price_usdc",
+            "type": "u64"
+          },
+          {
+            "name": "expiry",
+            "type": "i64"
+          },
+          {
+            "name": "nonce",
+            "docs": [
+              "Client-provided nonce — must be unique per (mint, owner) pair."
+            ],
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ProfitAccrued",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "holder",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount_usdc",
+            "type": "u64"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ProfitClaimed",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "holder",
+            "type": "pubkey"
+          },
+          {
+            "name": "amount_usdc",
+            "type": "u64"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "RollupSettled",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "mint",
+            "type": "pubkey"
+          },
+          {
+            "name": "timestamp",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "ScheduleCrankArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "task_id",
+            "docs": [
+              "Unique task identifier. Use a different id per scheduled crank."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "execution_interval_millis",
+            "docs": [
+              "Milliseconds between executions (30_000 = 30 seconds)."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "iterations",
+            "docs": [
+              "How many times to run. Use u64::MAX to run until undelegated."
+            ],
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "SukukVault",
+      "docs": [
+        "Profit pool — delegated to the rollup during a session.",
+        "Tracks the sukuk mint it belongs to and the authority.",
+        "Actual USDC sits in a separate ATA; this PDA acts as the",
+        "authority / bookkeeping account for the vault.",
+        "",
+        "seeds: [\"sukuk_vault\", mint]",
+        "space: 8 + 32 + 32 + 8 + 1 = 81"
+      ],
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "mint",
+            "docs": [
+              "The sukuk token mint this vault belongs to."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "authority",
+            "docs": [
+              "The issuer authority that controls the vault."
+            ],
+            "type": "pubkey"
+          },
+          {
+            "name": "usdc_balance",
+            "docs": [
+              "Cached USDC balance (6 decimals). Updated during profit accrual."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    }
+  ]
+}

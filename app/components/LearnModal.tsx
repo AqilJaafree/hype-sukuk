@@ -4,7 +4,7 @@
  * Pencil import hint:
  *   "Import the LearnModal component from app/components/LearnModal.tsx"
  */
-import { useEffect } from "react";
+import { useModal } from "@/hooks/useModal";
 
 interface Props {
   open: boolean;
@@ -43,19 +43,7 @@ const glossary = [
 ];
 
 export default function LearnModal({ open, onClose }: Props) {
-  // close on Escape
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [open, onClose]);
-
-  // lock body scroll
-  useEffect(() => {
-    document.body.style.overflow = open ? "hidden" : "";
-    return () => { document.body.style.overflow = ""; };
-  }, [open]);
+  useModal(open, onClose);
 
   if (!open) return null;
 

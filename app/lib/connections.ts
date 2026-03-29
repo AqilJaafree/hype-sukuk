@@ -30,6 +30,23 @@ export function createBaseProvider(
   return new AnchorProvider(connection, wallet, { commitment: "confirmed" });
 }
 
+/**
+ * Build a base provider from wallet adapter hooks (for client components).
+ * Requires connected wallet with signTransaction support.
+ */
+export function createProviderFromWallet(
+  connection: Connection,
+  publicKey: import("@solana/web3.js").PublicKey,
+  signTransaction: <T extends import("@solana/web3.js").Transaction | import("@solana/web3.js").VersionedTransaction>(tx: T) => Promise<T>,
+  signAllTransactions: <T extends import("@solana/web3.js").Transaction | import("@solana/web3.js").VersionedTransaction>(txs: T[]) => Promise<T[]>,
+): AnchorProvider {
+  return new AnchorProvider(
+    connection,
+    { publicKey, signTransaction, signAllTransactions },
+    { commitment: "confirmed" },
+  );
+}
+
 // ── Private ER (TEE) helpers ───────────────────────────────────────────────────
 
 /**
