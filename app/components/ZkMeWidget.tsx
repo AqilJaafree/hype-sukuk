@@ -89,10 +89,19 @@ export default function ZkMeWidget() {
       theme: "light",
     });
 
-    widget.on("kycFinished", (results: KycResults) => {
-      if (results.isGrant) {
-        setKycStatus("verified");
+    widget.on("kycFinished", async (results: KycResults) => {
+      if (!results.isGrant) return;
+      // Call server-side route to whitelist the investor on-chain (add_investor)
+      try {
+        await fetch("/api/zkme/whitelist", {
+          method:  "POST",
+          headers: { "Content-Type": "application/json" },
+          body:    JSON.stringify({ wallet: publicKey.toBase58() }),
+        });
+      } catch {
+        // Non-fatal — investor can still be manually whitelisted
       }
+      setKycStatus("verified");
     });
 
     widgetRef.current = widget;
