@@ -14,11 +14,21 @@ const inter = Inter({
   display: "swap",
 });
 
-const RPC_URL =
-  process.env.NEXT_PUBLIC_SOLANA_RPC_URL ?? "https://api.devnet.solana.com";
+const RAW_RPC = process.env.NEXT_PUBLIC_SOLANA_RPC_URL ?? "https://api.devnet.solana.com";
+
+/** Resolve relative paths (e.g. /api/rpc) to absolute URLs at runtime. */
+function resolveRpcUrl(raw: string): string {
+  if (raw.startsWith("http://") || raw.startsWith("https://")) return raw;
+  // Relative path — only valid in the browser
+  if (typeof window !== "undefined") return `${window.location.origin}${raw}`;
+  // SSR fallback: use public devnet so the server render doesn't crash
+  return "https://api.devnet.solana.com";
+}
 
 export default function App({ Component, pageProps }: AppProps) {
   const wallets = useMemo(() => [], []);
+  // Re-resolve on client so ConnectionProvider gets the real proxied URL
+  const rpcUrl = useMemo(() => resolveRpcUrl(RAW_RPC), []);
   const [tourOpen, setTourOpen] = useState(false);
 
   // Auto-show tour on first ever visit
@@ -29,7 +39,7 @@ export default function App({ Component, pageProps }: AppProps) {
   }, []);
 
   return (
-    <ConnectionProvider endpoint={RPC_URL}>
+    <ConnectionProvider endpoint={rpcUrl}>
       <WalletProvider wallets={wallets} autoConnect>
         <WalletModalProvider>
           <div className={`${inter.variable} font-sans`}>

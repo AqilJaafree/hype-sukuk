@@ -20,12 +20,14 @@ import type { TeeSession } from "./magicblock-tee";
 export function createBaseConnection(): Connection {
   const raw = process.env.SOLANA_RPC_URL ?? process.env.NEXT_PUBLIC_SOLANA_RPC_URL;
   if (!raw) throw new Error("SOLANA_RPC_URL is not set");
-  // In the browser, NEXT_PUBLIC_SOLANA_RPC_URL may be a relative path ("/api/rpc").
-  // @solana/web3.js needs an absolute URL, so resolve against window.location.origin.
-  const url =
-    typeof window !== "undefined" && raw.startsWith("/")
+  // NEXT_PUBLIC_SOLANA_RPC_URL may be a relative path ("/api/rpc") for the browser proxy.
+  // @solana/web3.js requires an absolute URL.
+  let url = raw;
+  if (raw.startsWith("/")) {
+    url = typeof window !== "undefined"
       ? `${window.location.origin}${raw}`
-      : raw;
+      : "https://api.devnet.solana.com"; // SSR fallback
+  }
   return new Connection(url, { commitment: "confirmed" });
 }
 
