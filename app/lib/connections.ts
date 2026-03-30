@@ -18,8 +18,14 @@ import type { TeeSession } from "./magicblock-tee";
 
 // ── Base layer (Helius devnet) ─────────────────────────────────────────────────
 export function createBaseConnection(): Connection {
-  const url = process.env.SOLANA_RPC_URL ?? process.env.NEXT_PUBLIC_SOLANA_RPC_URL;
-  if (!url) throw new Error("SOLANA_RPC_URL is not set");
+  const raw = process.env.SOLANA_RPC_URL ?? process.env.NEXT_PUBLIC_SOLANA_RPC_URL;
+  if (!raw) throw new Error("SOLANA_RPC_URL is not set");
+  // In the browser, NEXT_PUBLIC_SOLANA_RPC_URL may be a relative path ("/api/rpc").
+  // @solana/web3.js needs an absolute URL, so resolve against window.location.origin.
+  const url =
+    typeof window !== "undefined" && raw.startsWith("/")
+      ? `${window.location.origin}${raw}`
+      : raw;
   return new Connection(url, { commitment: "confirmed" });
 }
 
