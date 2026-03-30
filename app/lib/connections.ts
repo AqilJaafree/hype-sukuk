@@ -17,18 +17,24 @@ import { DELEGATION_PROGRAM_ID } from "@magicblock-labs/ephemeral-rollups-sdk";
 import type { TeeSession } from "./magicblock-tee";
 
 // ── Base layer (Helius devnet) ─────────────────────────────────────────────────
+
+/**
+ * Resolve a potentially-relative RPC URL to an absolute one.
+ * NEXT_PUBLIC_SOLANA_RPC_URL is set to "/api/rpc" (the proxy route) so the
+ * Helius API key never reaches the browser. @solana/web3.js requires http/https,
+ * so relative paths are expanded against window.location.origin on the client
+ * and fall back to the public devnet endpoint during SSR.
+ */
+export function resolveRpcUrl(raw: string): string {
+  if (raw.startsWith("http://") || raw.startsWith("https://")) return raw;
+  if (typeof window !== "undefined") return `${window.location.origin}${raw}`;
+  return "https://api.devnet.solana.com"; // SSR fallback — no real calls happen server-side
+}
+
 export function createBaseConnection(): Connection {
   const raw = process.env.SOLANA_RPC_URL ?? process.env.NEXT_PUBLIC_SOLANA_RPC_URL;
   if (!raw) throw new Error("SOLANA_RPC_URL is not set");
-  // NEXT_PUBLIC_SOLANA_RPC_URL may be a relative path ("/api/rpc") for the browser proxy.
-  // @solana/web3.js requires an absolute URL.
-  let url = raw;
-  if (raw.startsWith("/")) {
-    url = typeof window !== "undefined"
-      ? `${window.location.origin}${raw}`
-      : "https://api.devnet.solana.com"; // SSR fallback
-  }
-  return new Connection(url, { commitment: "confirmed" });
+  return new Connection(resolveRpcUrl(raw), { commitment: "confirmed" });
 }
 
 export function createBaseProvider(

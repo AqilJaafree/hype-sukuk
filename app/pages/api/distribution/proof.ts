@@ -15,9 +15,9 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { Connection, PublicKey } from "@solana/web3.js";
 import { createHash } from "crypto";
-
-const SUKUK_ROLLUP_PROGRAM_ID = new PublicKey("B6KV6L7ZUC4mNf8P6ccudTneJqrE4Zsf7qQc2yzToqpt");
-const SUKUK_MINT_STR = process.env.SUKUK_MINT ?? "6YhxWGZmbGH67XkwC84tyBqv6Kx5aq88SiyUHvhfLBa2";
+import { SUKUK_ROLLUP_PROGRAM_ID, SUKUK_MINT } from "../../../lib/programs";
+import { DISCRIMINATOR_ACCRUAL_STATE } from "../../../lib/constants";
+import { getErrorMessage } from "../../../lib/errors";
 
 // ── AccrualState layout (after 8-byte discriminator) ─────────────────────────
 //   holder:                  32 bytes  (offset  8)
@@ -27,14 +27,22 @@ const SUKUK_MINT_STR = process.env.SUKUK_MINT ?? "6YhxWGZmbGH67XkwC84tyBqv6Kx5aq
 //   token_balance_snapshot:   8 bytes  (offset 88)
 //   bump:                     1 byte   (offset 96)
 
-function parseAccrualState(data: Buffer): { holder: PublicKey; mint: PublicKey; accruedProfitUsdc: bigint } {
-  const holder           = new PublicKey(data.subarray(8, 40));
-  const mint             = new PublicKey(data.subarray(40, 72));
-  const accruedProfitUsdc = data.readBigUInt64LE(72);
-  return { holder, mint, accruedProfitUsdc };
+interface AccrualStateAccount {
+  holder:           PublicKey;
+  mint:             PublicKey;
+  accruedProfitUsdc: bigint;
 }
 
-// ── Minimal Merkle tree matching rs_merkle MerkleTree::<Sha256> ──────────────
+function parseAccrualState(data: Buffer): AccrualStateAccount {
+  return {
+    holder:            new PublicKey(data.subarray(8, 40)),
+    mint:              new PublicKey(data.subarray(40, 72)),
+    accruedProfitUsdc: data.readBigUInt64LE(72),
+  };
+}
+
+// ── Merkle tree matching rs_merkle MerkleTree::<Sha256> ───────────────────────
+// Pairs hashed as sha256(left || right). Odd nodes are promoted (duplicated).
 
 function sha256(data: Buffer): Buffer {
   return createHash("sha256").update(data).digest();
@@ -46,18 +54,9 @@ function buildLeaf(holderPubkey: PublicKey, amountUsdc: bigint): Buffer {
   return sha256(Buffer.concat([holderPubkey.toBuffer(), amountBuf]));
 }
 
-/**
- * Build Merkle tree from leaves, return [root, proofPaths].
- * Matches rs_merkle internal structure: pairs are hashed as sha256(left || right).
- * Odd nodes are promoted (duplicated) to make even pairs.
- */
-function buildMerkleTree(leaves: Buffer[]): {
-  root: Buffer;
-  getProof: (leafIndex: number) => Buffer[];
-} {
+function buildMerkleTree(leaves: Buffer[]): { getProof: (leafIndex: number) => Buffer[] } {
   if (leaves.length === 0) throw new Error("Empty leaves");
 
-  // Store each level: layers[0] = leaves, layers[n] = root
   const layers: Buffer[][] = [leaves.slice()];
 
   while (layers[layers.length - 1].length > 1) {
@@ -65,28 +64,26 @@ function buildMerkleTree(leaves: Buffer[]): {
     const next: Buffer[] = [];
     for (let i = 0; i < current.length; i += 2) {
       const left  = current[i];
-      const right = i + 1 < current.length ? current[i + 1] : current[i]; // promote odd node
+      const right = i + 1 < current.length ? current[i + 1] : current[i];
       next.push(sha256(Buffer.concat([left, right])));
     }
     layers.push(next);
   }
 
-  const root = layers[layers.length - 1][0];
-
   function getProof(leafIndex: number): Buffer[] {
     const proof: Buffer[] = [];
     let idx = leafIndex;
     for (let level = 0; level < layers.length - 1; level++) {
-      const layer     = layers[level];
+      const layer      = layers[level];
       const siblingIdx = idx % 2 === 0 ? idx + 1 : idx - 1;
-      const sibling    = siblingIdx < layer.length ? layer[siblingIdx] : layer[idx]; // odd node
-      proof.push(sibling);
+      // Promote odd node: sibling is the node itself if no right neighbour
+      proof.push(siblingIdx < layer.length ? layer[siblingIdx] : layer[idx]);
       idx = Math.floor(idx / 2);
     }
     return proof;
   }
 
-  return { root, getProof };
+  return { getProof };
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -112,23 +109,17 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   const periodStart = parseInt(periodStartStr, 10);
   if (isNaN(periodStart)) {
-    return res.status(400).json({ error: "Invalid periodStart (must be unix timestamp)" });
+    return res.status(400).json({ error: "Invalid periodStart — must be a unix timestamp" });
   }
 
-  const rpcUrl = process.env.SOLANA_RPC_URL ?? "https://api.devnet.solana.com";
+  const rpcUrl     = process.env.SOLANA_RPC_URL ?? "https://api.devnet.solana.com";
   const connection = new Connection(rpcUrl, "confirmed");
 
   try {
-    const mint = new PublicKey(SUKUK_MINT_STR);
-
-    // Anchor discriminator = sha256("account:AccrualState")[0..8]
-    const ACCRUAL_DISCRIMINATOR = Buffer.from([184, 54, 155, 209, 59, 54, 244, 162]);
-
     const accounts = await connection.getProgramAccounts(SUKUK_ROLLUP_PROGRAM_ID, {
       filters: [
-        { memcmp: { offset: 0, bytes: ACCRUAL_DISCRIMINATOR.toString("base64"), encoding: "base64" } },
-        // Filter by mint at offset 40
-        { memcmp: { offset: 40, bytes: mint.toBase58() } },
+        { memcmp: { offset: 0, bytes: DISCRIMINATOR_ACCRUAL_STATE.toString("base64"), encoding: "base64" } },
+        { memcmp: { offset: 40, bytes: SUKUK_MINT.toBase58() } },
       ],
     });
 
@@ -136,38 +127,31 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(404).json({ error: "No accrual states found for this mint" });
     }
 
-    // Parse and sort by holder pubkey bytes (consistent ordering with commit tx)
+    // Sort by holder pubkey bytes — must be consistent with the ordering used in commit_distribution
     const accruals = accounts
       .map(({ account }) => parseAccrualState(Buffer.from(account.data)))
       .sort((a, b) => Buffer.compare(a.holder.toBuffer(), b.holder.toBuffer()));
 
-    // Build Merkle tree with the same leaf construction as commit_distribution
-    const leaves = accruals.map(({ holder, accruedProfitUsdc }) =>
-      buildLeaf(holder, accruedProfitUsdc),
-    );
-
-    const { getProof } = buildMerkleTree(leaves);
-
-    // Find the requesting wallet's leaf index
     const leafIndex = accruals.findIndex((a) => a.holder.equals(walletPubkey));
     if (leafIndex === -1) {
       return res.status(404).json({ error: "Wallet not found in distribution" });
     }
 
-    const accrual = accruals[leafIndex];
-    const proofBuffers = getProof(leafIndex);
+    const leaves = accruals.map(({ holder, accruedProfitUsdc }) =>
+      buildLeaf(holder, accruedProfitUsdc),
+    );
 
-    // Serialize proof as array of 32-element byte arrays (matches Vec<[u8; 32]> in Rust)
-    const proof = proofBuffers.map((buf) => Array.from(buf));
+    const { getProof } = buildMerkleTree(leaves);
+    // Serialize as array of 32-byte arrays to match Vec<[u8; 32]> in Rust
+    const proof = getProof(leafIndex).map((buf) => Array.from(buf));
 
     return res.status(200).json({
-      amount:      Number(accrual.accruedProfitUsdc),
+      amount:      Number(accruals[leafIndex].accruedProfitUsdc),
       leafIndex,
       proof,
       periodStart,
     });
-  } catch (e: unknown) {
-    const msg = e instanceof Error ? e.message : String(e);
-    return res.status(500).json({ error: "Failed to build Merkle proof", detail: msg });
+  } catch (e) {
+    return res.status(500).json({ error: "Failed to build Merkle proof", detail: getErrorMessage(e) });
   }
 }

@@ -6,6 +6,7 @@
  */
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useEffect, useState } from "react";
+import { ONE_YEAR_SECONDS } from "@/lib/constants";
 
 const APP_ID = process.env.NEXT_PUBLIC_ZKME_APP_ID ?? "";
 
@@ -33,7 +34,7 @@ export default function KycStatusBadge() {
           return;
         }
         // If verifyTime is older than 12 months, treat as expired
-        if (verifyTime && Date.now() / 1000 - verifyTime > 365 * 24 * 3600) {
+        if (verifyTime && Date.now() / 1000 - verifyTime > ONE_YEAR_SECONDS) {
           setStatus("expired");
         } else {
           setStatus("approved");

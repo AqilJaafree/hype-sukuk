@@ -7,6 +7,7 @@ import "@solana/wallet-adapter-react-ui/styles.css";
 import "@zkmelabs/widget/dist/style.css";
 import "../styles/globals.css";
 import OnboardingTour, { TOUR_STORAGE_KEY } from "@/components/OnboardingTour";
+import { resolveRpcUrl } from "@/lib/connections";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -16,18 +17,10 @@ const inter = Inter({
 
 const RAW_RPC = process.env.NEXT_PUBLIC_SOLANA_RPC_URL ?? "https://api.devnet.solana.com";
 
-/** Resolve relative paths (e.g. /api/rpc) to absolute URLs at runtime. */
-function resolveRpcUrl(raw: string): string {
-  if (raw.startsWith("http://") || raw.startsWith("https://")) return raw;
-  // Relative path — only valid in the browser
-  if (typeof window !== "undefined") return `${window.location.origin}${raw}`;
-  // SSR fallback: use public devnet so the server render doesn't crash
-  return "https://api.devnet.solana.com";
-}
-
 export default function App({ Component, pageProps }: AppProps) {
   const wallets = useMemo(() => [], []);
-  // Re-resolve on client so ConnectionProvider gets the real proxied URL
+  // Resolve at useMemo time (client) so ConnectionProvider gets an absolute URL.
+  // /api/rpc is the proxy route that hides the Helius API key from the browser.
   const rpcUrl = useMemo(() => resolveRpcUrl(RAW_RPC), []);
   const [tourOpen, setTourOpen] = useState(false);
 

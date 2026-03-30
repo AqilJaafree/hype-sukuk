@@ -23,10 +23,9 @@ import {
   findDistributionRootPda,
   findClaimReceiptPda,
   SUKUK_MINT,
+  USDC_MINT,
 } from "@/lib/programs";
-
-// Devnet USDC
-const USDC_MINT = new PublicKey("4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU");
+import { getErrorMessage } from "@/lib/errors";
 
 const PERIOD_LABEL = "March 2026";
 const PERIOD_RANGE = "2026-03-01 — 2026-03-31";
@@ -129,9 +128,8 @@ export default function ClaimProfitForm() {
         .rpc({ skipPreflight: false });
 
       tx.setSuccess(sig);
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : String(e);
-      tx.setErrorMsg(msg);
+    } catch (e) {
+      tx.setErrorMsg(getErrorMessage(e));
     }
   };
 

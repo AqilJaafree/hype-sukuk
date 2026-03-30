@@ -20,6 +20,8 @@ import {
   findEntryPda,
   SUKUK_MINT,
 } from "@/lib/programs";
+import { OTC_ORDER_TTL_SECONDS } from "@/lib/constants";
+import { getErrorMessage } from "@/lib/errors";
 
 type Side = "bid" | "ask";
 
@@ -45,9 +47,14 @@ export default function PlaceOrderForm() {
       const registryPda = findRegistryPda(SUKUK_MINT);
       const entryPda    = findEntryPda(registryPda, publicKey);
 
-      const amountLamports = new BN(Math.round(parseFloat(amount) * 1_000_000));
-      const priceUsdc      = new BN(Math.round(parseFloat(price)  * 1_000_000));
-      const expiry         = new BN(Math.floor(Date.now() / 1000) + 3600);
+      const parsedAmount = parseFloat(amount);
+      const parsedPrice  = parseFloat(price);
+      if (!isFinite(parsedAmount) || parsedAmount <= 0) throw new Error("Invalid amount");
+      if (!isFinite(parsedPrice)  || parsedPrice  <= 0) throw new Error("Invalid price");
+
+      const amountLamports = new BN(Math.round(parsedAmount * 1_000_000));
+      const priceUsdc      = new BN(Math.round(parsedPrice  * 1_000_000));
+      const expiry         = new BN(Math.floor(Date.now() / 1000) + OTC_ORDER_TTL_SECONDS);
 
       const sig = await (rollupProgram.methods as any)
         .placeOtcOrder({
@@ -69,9 +76,8 @@ export default function PlaceOrderForm() {
       setNonce((n) => n + 1);
       setAmount("");
       setPrice("");
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : String(e);
-      tx.setErrorMsg(msg);
+    } catch (e) {
+      tx.setErrorMsg(getErrorMessage(e));
     }
   };
 

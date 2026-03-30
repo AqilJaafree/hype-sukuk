@@ -15,10 +15,12 @@ import rollupIdl  from "./idl/sukuk_rollup.json";
 export const SUKUK_HOOK_PROGRAM_ID   = new PublicKey("3MrobtssgGyiuLVgheCqTSWJGWQxXDbPvMtip7tuMQkv");
 export const SUKUK_ROLLUP_PROGRAM_ID = new PublicKey("B6KV6L7ZUC4mNf8P6ccudTneJqrE4Zsf7qQc2yzToqpt");
 
-// ── Mint ───────────────────────────────────────────────────────────────────────
+// ── Mints ──────────────────────────────────────────────────────────────────────
 export const SUKUK_MINT = new PublicKey(
   process.env.NEXT_PUBLIC_SUKUK_MINT ?? "6YhxWGZmbGH67XkwC84tyBqv6Kx5aq88SiyUHvhfLBa2",
 );
+/** Devnet USDC (Circle faucet) */
+export const USDC_MINT = new PublicKey("4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU");
 
 // ── PDA helpers ────────────────────────────────────────────────────────────────
 export function findRegistryPda(mint: PublicKey): PublicKey {
