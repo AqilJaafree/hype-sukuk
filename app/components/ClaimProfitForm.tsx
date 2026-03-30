@@ -4,7 +4,7 @@
  * The claim runs on the base layer (devnet) after a distribution_root has
  * been committed by the issuer following TEE settlement.
  *
- * Proof is fetched from /api/distribution/proof?wallet=<pubkey>&period=<n>
+ * Proof is fetched from /api/distribution/proof?wallet=<pubkey>&periodStart=<unix_ts>
  *
  * Pencil import hint:
  *   "Import the ClaimProfitForm component from app/components/ClaimProfitForm.tsx"
@@ -28,13 +28,19 @@ import {
 // Devnet USDC
 const USDC_MINT = new PublicKey("4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU");
 
-const CURRENT_PERIOD = 1; // TODO: fetch from DistributionRoot PDA
-const PERIOD_LABEL   = "March 2026";
-const PERIOD_RANGE   = "2026-03-01 — 2026-03-31";
+const PERIOD_LABEL = "March 2026";
+const PERIOD_RANGE = "2026-03-01 — 2026-03-31";
 
 interface DistributionProof {
-  amount:  number;
-  proof:   number[][];  // Merkle proof as array of 32-byte arrays
+  amount:      number;
+  leafIndex:   number;
+  proof:       number[][];  // Merkle proof as array of 32-byte arrays
+  periodStart: number;      // Unix timestamp used in PDA seed
+}
+
+interface DistributionRootInfo {
+  periodStart: number;
+  committed:   boolean;
 }
 
 export default function ClaimProfitForm() {
@@ -42,38 +48,42 @@ export default function ClaimProfitForm() {
   const { connection } = useConnection();
   const tx = useTransactionStatus();
 
-  const [proof,       setProof]       = useState<DistributionProof | null>(null);
-  const [rootExists,  setRootExists]  = useState(false);
-  const [proofLoading, setProofLoading] = useState(false);
+  const [proof,         setProof]         = useState<DistributionProof | null>(null);
+  const [rootInfo,      setRootInfo]      = useState<DistributionRootInfo | null>(null);
+  const [proofLoading,  setProofLoading]  = useState(false);
 
-  // Check if distribution root exists and fetch proof
+  // Discover the latest committed DistributionRoot and fetch proof
   useEffect(() => {
     if (!connected || !publicKey) {
       setProof(null);
-      setRootExists(false);
+      setRootInfo(null);
       return;
     }
 
     let cancelled = false;
     setProofLoading(true);
 
-    const rootPda = findDistributionRootPda(SUKUK_MINT, CURRENT_PERIOD);
+    // Discover latest root via API (scans getProgramAccounts server-side)
+    fetch(`/api/distribution/roots?mint=${SUKUK_MINT.toBase58()}`)
+      .then((r) => r.ok ? r.json() : null)
+      .then((r) => r?.roots ?? null)
+      .then(async (roots: DistributionRootInfo[] | null) => {
+        if (cancelled || !roots || roots.length === 0) {
+          if (!cancelled) setRootInfo(null);
+          return;
+        }
 
-    // Check if root is committed on-chain
-    connection.getAccountInfo(rootPda)
-      .then((info) => {
-        if (cancelled) return;
-        if (!info) { setRootExists(false); return; }
-        setRootExists(true);
+        // Use the most recent committed root
+        const latest = roots[roots.length - 1];
+        if (!cancelled) setRootInfo(latest);
 
-        // Fetch proof from API
-        return fetch(`/api/distribution/proof?wallet=${publicKey.toBase58()}&period=${CURRENT_PERIOD}`)
-          .then((r) => r.ok ? r.json() : null)
-          .then((data: DistributionProof | null) => {
-            if (!cancelled) setProof(data);
-          });
+        // Fetch Merkle proof for this wallet
+        const res = await fetch(
+          `/api/distribution/proof?wallet=${publicKey.toBase58()}&periodStart=${latest.periodStart}`,
+        );
+        if (!cancelled) setProof(res.ok ? await res.json() : null);
       })
-      .catch(() => { if (!cancelled) setRootExists(false); })
+      .catch(() => { if (!cancelled) setRootInfo(null); })
       .finally(() => { if (!cancelled) setProofLoading(false); });
 
     return () => { cancelled = true; };
@@ -92,14 +102,19 @@ export default function ClaimProfitForm() {
       );
       const rollupProgram = createRollupProgram(provider);
 
-      const rootPda         = findDistributionRootPda(SUKUK_MINT, CURRENT_PERIOD);
+      const periodStart     = BigInt(proof.periodStart);
+      const rootPda         = findDistributionRootPda(SUKUK_MINT, periodStart);
       const vaultPda        = findVaultPda(SUKUK_MINT);
       const claimReceiptPda = findClaimReceiptPda(rootPda, publicKey);
       const vaultUsdcAta    = getAssociatedTokenAddressSync(USDC_MINT, vaultPda, true);
       const holderUsdcAta   = getAssociatedTokenAddressSync(USDC_MINT, publicKey);
 
       const sig = await (rollupProgram.methods as any)
-        .claimProfit(new BN(proof.amount), proof.proof)
+        .claimProfit({
+          amountUsdc: new BN(proof.amount),
+          leafIndex:  proof.leafIndex,
+          proof:      proof.proof,
+        })
         .accounts({
           holder:           publicKey,
           distributionRoot: rootPda,
@@ -150,13 +165,13 @@ export default function ClaimProfitForm() {
         <p className="text-xs text-muted">{PERIOD_RANGE}</p>
       </div>
 
-      {!rootExists && !proofLoading && (
+      {!rootInfo && !proofLoading && (
         <p className="text-sm text-muted leading-relaxed">
           Distribution has not been committed yet — check back after settlement.
         </p>
       )}
 
-      {rootExists && !proof && !proofLoading && (
+      {rootInfo && !proof && !proofLoading && (
         <p className="text-sm text-muted leading-relaxed">
           No claimable amount found for this wallet in the current period.
         </p>
@@ -165,7 +180,7 @@ export default function ClaimProfitForm() {
       <div className="space-y-3">
         <button
           onClick={handleClaim}
-          disabled={!rootExists || !proof || tx.isLoading}
+          disabled={!rootInfo || !proof || tx.isLoading}
           className="w-full bg-forest text-white text-xs tracking-widest uppercase py-3 rounded-none disabled:opacity-40 hover:bg-forest/90 transition-colors"
         >
           {tx.isLoading ? "Claiming…" : "Claim USDC Profit"}

@@ -52,9 +52,10 @@ export function findOtcOrderPda(mint: PublicKey, owner: PublicKey, nonce: bigint
   )[0];
 }
 
-export function findDistributionRootPda(mint: PublicKey, period: number): PublicKey {
-  const periodBuf = Buffer.alloc(4);
-  periodBuf.writeUInt32LE(period);
+/** periodStart is a Unix timestamp (seconds, i64) matching DistributionRoot.period_start */
+export function findDistributionRootPda(mint: PublicKey, periodStart: bigint): PublicKey {
+  const periodBuf = Buffer.alloc(8);
+  periodBuf.writeBigInt64LE(periodStart);
   return PublicKey.findProgramAddressSync(
     [Buffer.from("distribution_root"), mint.toBuffer(), periodBuf],
     SUKUK_ROLLUP_PROGRAM_ID,
